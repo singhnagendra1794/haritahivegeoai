@@ -2,6 +2,7 @@ import HeroSection from "@/components/HeroSection";
 import ArchitectureOverview from "@/components/ArchitectureOverview";
 import TechnologyStack from "@/components/TechnologyStack";
 import ScalabilityPatterns from "@/components/ScalabilityPatterns";
+import DataIngestionWorkflow from "@/components/DataIngestionWorkflow";
 import InfrastructureRequirements from "@/components/InfrastructureRequirements";
 import ImplementationRoadmap from "@/components/ImplementationRoadmap";
 
@@ -12,6 +13,7 @@ const Index = () => {
       <ArchitectureOverview />
       <TechnologyStack />
       <ScalabilityPatterns />
+      <DataIngestionWorkflow />
       <InfrastructureRequirements />
       <ImplementationRoadmap />
       
