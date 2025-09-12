@@ -1,0 +1,32 @@
+{
+  "name": "harita-hive-job-worker",
+  "version": "1.0.0",
+  "description": "Job worker for Harita Hive GeoAI processing",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.57.4",
+    "bullmq": "^5.4.2",
+    "redis": "^4.6.12",
+    "sharp": "^0.33.2",
+    "gdal-async": "^3.8.0",
+    "turf": "^1.5.0",
+    "@turf/turf": "^6.5.0",
+    "axios": "^1.6.7",
+    "dotenv": "^16.4.1",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.16",
+    "@types/jest": "^29.5.12",
+    "typescript": "^5.3.3",
+    "ts-node": "^10.9.2",
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.3"
+  }
+}

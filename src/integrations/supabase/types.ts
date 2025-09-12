@@ -88,6 +88,195 @@ export type Database = {
         }
         Relationships: []
       }
+      jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          job_type: Database["public"]["Enums"]["job_type"]
+          max_retries: number | null
+          organization_id: string
+          parameters: Json | null
+          project_id: string | null
+          result_data: Json | null
+          retry_count: number | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["job_status"]
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          job_type: Database["public"]["Enums"]["job_type"]
+          max_retries?: number | null
+          organization_id: string
+          parameters?: Json | null
+          project_id?: string | null
+          result_data?: Json | null
+          retry_count?: number | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["job_status"]
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          job_type?: Database["public"]["Enums"]["job_type"]
+          max_retries?: number | null
+          organization_id?: string
+          parameters?: Json | null
+          project_id?: string | null
+          result_data?: Json | null
+          retry_count?: number | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["job_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ndvi_results: {
+        Row: {
+          created_at: string
+          id: string
+          job_id: string
+          metadata: Json | null
+          organization_id: string
+          project_id: string
+          raster_data_url: string | null
+          statistics: Json | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          job_id: string
+          metadata?: Json | null
+          organization_id: string
+          project_id: string
+          raster_data_url?: string | null
+          statistics?: Json | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          job_id?: string
+          metadata?: Json | null
+          organization_id?: string
+          project_id?: string
+          raster_data_url?: string | null
+          statistics?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ndvi_results_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ndvi_results_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ndvi_results_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_members: {
+        Row: {
+          id: string
+          invited_at: string
+          invited_by: string | null
+          joined_at: string | null
+          organization_id: string
+          role: Database["public"]["Enums"]["organization_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          invited_at?: string
+          invited_by?: string | null
+          joined_at?: string | null
+          organization_id: string
+          role?: Database["public"]["Enums"]["organization_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          invited_at?: string
+          invited_by?: string | null
+          joined_at?: string | null
+          organization_id?: string
+          role?: Database["public"]["Enums"]["organization_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          settings: Json | null
+          slug: string
+          subscription_tier: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          settings?: Json | null
+          slug: string
+          subscription_tier?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          settings?: Json | null
+          slug?: string
+          subscription_tier?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       project_collaborators: {
         Row: {
           accepted_at: string | null
@@ -207,10 +396,12 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          organization_id: string | null
           owner_id: string
           sector: string
           settings: Json | null
           status: string
+          tenant_id: string | null
           title: string
           updated_at: string
         }
@@ -218,10 +409,12 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          organization_id?: string | null
           owner_id: string
           sector: string
           settings?: Json | null
           status?: string
+          tenant_id?: string | null
           title: string
           updated_at?: string
         }
@@ -229,12 +422,49 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          organization_id?: string | null
           owner_id?: string
           sector?: string
           settings?: Json | null
           status?: string
+          tenant_id?: string | null
           title?: string
           updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quota_definitions: {
+        Row: {
+          created_at: string
+          id: string
+          limit_value: number
+          reset_period: string | null
+          resource_type: string
+          subscription_tier: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          limit_value: number
+          reset_period?: string | null
+          resource_type: string
+          subscription_tier: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          limit_value?: number
+          reset_period?: string | null
+          resource_type?: string
+          subscription_tier?: string
         }
         Relationships: []
       }
@@ -331,6 +561,47 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      usage_tracking: {
+        Row: {
+          created_at: string
+          id: string
+          metadata: Json | null
+          organization_id: string
+          quantity: number | null
+          resource_id: string | null
+          resource_type: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          organization_id: string
+          quantity?: number | null
+          resource_id?: string | null
+          resource_type: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          organization_id?: string
+          quantity?: number | null
+          resource_id?: string | null
+          resource_type?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usage_tracking_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -633,6 +904,14 @@ export type Database = {
       bytea: {
         Args: { "": unknown } | { "": unknown }
         Returns: string
+      }
+      check_organization_quota: {
+        Args: {
+          org_id: string
+          requested_quantity?: number
+          resource_type: string
+        }
+        Returns: boolean
       }
       create_buffer_geojson: {
         Args: {
@@ -2199,6 +2478,16 @@ export type Database = {
         Args: { "": unknown }
         Returns: string
       }
+      track_usage: {
+        Args: {
+          metadata?: Json
+          org_id: string
+          quantity?: number
+          resource_id?: string
+          resource_type: string
+        }
+        Returns: undefined
+      }
       unlockrows: {
         Args: { "": string }
         Returns: number
@@ -2216,6 +2505,14 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "analyst" | "viewer"
+      job_status: "pending" | "running" | "completed" | "failed" | "cancelled"
+      job_type:
+        | "ndvi"
+        | "change_detection"
+        | "zonal_stats"
+        | "buffer"
+        | "report_generation"
+      organization_role: "owner" | "admin" | "member" | "viewer"
     }
     CompositeTypes: {
       geometry_dump: {
@@ -2352,6 +2649,15 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "analyst", "viewer"],
+      job_status: ["pending", "running", "completed", "failed", "cancelled"],
+      job_type: [
+        "ndvi",
+        "change_detection",
+        "zonal_stats",
+        "buffer",
+        "report_generation",
+      ],
+      organization_role: ["owner", "admin", "member", "viewer"],
     },
   },
 } as const
