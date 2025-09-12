@@ -57,12 +57,12 @@ const processors = {
 // Main job processor function
 async function processJob(job: any) {
   const { id: jobId, data } = job;
-  const { job_type, parameters, organization_id, project_id, user_id } = data;
+  const { job_type, parameters, session_id, project_id } = data;
 
   logger.info(`Processing job ${jobId} of type ${job_type}`, {
     jobId,
     jobType: job_type,
-    organizationId: organization_id,
+    sessionId: session_id,
     projectId: project_id
   });
 
@@ -86,9 +86,8 @@ async function processJob(job: any) {
     const result = await processor.process({
       jobId,
       parameters,
-      organizationId: organization_id,
-      projectId: project_id,
-      userId: user_id
+      sessionId: session_id,
+      projectId: project_id
     });
 
     // Update job status to 'completed'

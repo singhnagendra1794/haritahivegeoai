@@ -12,35 +12,26 @@ serve(async (req) => {
   }
 
   try {
-    const authHeader = req.headers.get('Authorization')!;
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
-
-    // Get the current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
-      throw new Error('User not authenticated');
-    }
 
     const url = new URL(req.url);
     const jobId = url.searchParams.get('job_id');
-    const organizationId = url.searchParams.get('organization_id');
+    const sessionId = url.searchParams.get('session_id');
 
     if (!jobId) {
       throw new Error('Missing required parameter: job_id');
     }
 
-    // Get job with organization check
+    // Get job - optionally filter by session
     let query = supabase
       .from('jobs')
       .select(`
         id,
-        organization_id,
+        session_id,
         project_id,
-        user_id,
         job_type,
         status,
         parameters,
@@ -50,32 +41,19 @@ serve(async (req) => {
         completed_at,
         created_at,
         retry_count,
-        max_retries,
-        organizations!inner(name, subscription_tier)
+        max_retries
       `)
       .eq('id', jobId);
 
-    // Apply organization filter if provided
-    if (organizationId) {
-      query = query.eq('organization_id', organizationId);
+    // Apply session filter if provided
+    if (sessionId) {
+      query = query.eq('session_id', sessionId);
     }
 
     const { data: job, error: jobError } = await query.single();
 
     if (jobError || !job) {
-      throw new Error('Job not found or access denied');
-    }
-
-    // Check if user has access to this job
-    const { data: membership } = await supabase
-      .from('organization_members')
-      .select('role')
-      .eq('organization_id', job.organization_id)
-      .eq('user_id', user.id)
-      .single();
-
-    if (!membership) {
-      throw new Error('User not authorized to view this job');
+      throw new Error('Job not found');
     }
 
     // Calculate progress and estimated completion
@@ -115,22 +93,24 @@ serve(async (req) => {
     }
 
     // Track API call usage (lightweight operation)
-    await supabase.rpc('track_usage', {
-      org_id: job.organization_id,
-      resource_type: 'api_calls',
-      quantity: 0.1, // Fractional cost for status checks
-      resource_id: job.id,
-      metadata: {
-        endpoint: 'job-status',
-        job_type: job.job_type
-      }
-    });
+    if (job.session_id) {
+      await supabase.rpc('track_session_usage', {
+        session_identifier: job.session_id,
+        resource_type: 'api_calls',
+        quantity: 0.1, // Fractional cost for status checks
+        resource_id: job.id,
+        metadata: {
+          endpoint: 'job-status',
+          job_type: job.job_type
+        }
+      });
+    }
 
     const response = {
       success: true,
       job: {
         id: job.id,
-        organization_id: job.organization_id,
+        session_id: job.session_id,
         project_id: job.project_id,
         job_type: job.job_type,
         status: job.status,
@@ -145,10 +125,6 @@ serve(async (req) => {
         parameters: job.parameters,
         result_data: job.result_data,
         related_results: relatedResults
-      },
-      organization: {
-        name: job.organizations.name,
-        subscription_tier: job.organizations.subscription_tier
       }
     };
 

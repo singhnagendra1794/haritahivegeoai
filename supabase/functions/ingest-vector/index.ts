@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -32,27 +32,28 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    // Verify JWT token
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      throw new Error('Missing authorization header')
-    }
-
-    const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-    
-    if (authError || !user) {
-      throw new Error('Invalid or expired token')
-    }
-
-    console.log(`Vector ingestion request from user: ${user.id}`)
-
     // Parse request body
     const body = await req.json()
-    const { geojson } = body
+    const { geojson, sessionId, projectId } = body
 
     if (!geojson) {
       throw new Error('Missing geojson data')
+    }
+
+    // Generate session ID if not provided
+    const session_id = sessionId || crypto.randomUUID()
+    console.log(`Vector ingestion request for session: ${session_id}`)
+
+    // Check session quota for API calls
+    const { data: quotaCheck, error: quotaError } = await supabase
+      .rpc('check_session_quota', {
+        session_identifier: session_id,
+        resource_type: 'api_calls',
+        requested_quantity: 1
+      });
+
+    if (quotaError || !quotaCheck) {
+      throw new Error('Daily API call limit exceeded for this session');
     }
 
     // Validate GeoJSON structure
@@ -65,13 +66,24 @@ serve(async (req) => {
     
     if (geojson.type === 'FeatureCollection') {
       for (const feature of geojson.features) {
-        const result = await storeFeature(supabase, feature, user.id)
+        const result = await storeFeature(supabase, feature, session_id, projectId)
         results.push(result)
       }
     } else if (geojson.type === 'Feature') {
-      const result = await storeFeature(supabase, geojson, user.id)
+      const result = await storeFeature(supabase, geojson, session_id, projectId)
       results.push(result)
     }
+
+    // Track usage
+    await supabase.rpc('track_session_usage', {
+      session_identifier: session_id,
+      resource_type: 'api_calls',
+      quantity: 1,
+      metadata: {
+        endpoint: 'ingest-vector',
+        feature_count: results.length
+      }
+    });
 
     console.log(`Successfully ingested ${results.length} features`)
 
@@ -79,6 +91,7 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         message: `Ingested ${results.length} features`,
+        session_id: session_id,
         data: results
       }),
       {
@@ -128,11 +141,11 @@ function isValidFeature(feature: any): boolean {
          Array.isArray(feature.geometry.coordinates)
 }
 
-async function storeFeature(supabase: any, feature: GeoJSONFeature, userId: string) {
+async function storeFeature(supabase: any, feature: GeoJSONFeature, sessionId: string, projectId?: string) {
   const { data, error } = await supabase
     .from('geo_features')
     .insert({
-      user_id: userId,
+      session_id: sessionId,
       name: feature.properties?.name || 'Unnamed Feature',
       geometry: `SRID=4326;${geometryToWKT(feature.geometry)}`,
       properties: feature.properties || {},
@@ -143,6 +156,22 @@ async function storeFeature(supabase: any, feature: GeoJSONFeature, userId: stri
 
   if (error) {
     throw new Error(`Database error: ${error.message}`)
+  }
+
+  // Create dataset record if projectId provided
+  if (projectId) {
+    await supabase
+      .from('project_datasets')
+      .insert({
+        project_id: projectId,
+        name: `Vector Data - ${feature.properties?.name || 'Feature'}`,
+        file_type: 'geojson',
+        metadata: {
+          feature_id: data.id,
+          geometry_type: feature.geometry.type,
+          ingested_at: new Date().toISOString()
+        }
+      })
   }
 
   return data

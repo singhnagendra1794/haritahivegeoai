@@ -55,41 +55,76 @@ export type Database = {
           },
         ]
       }
+      api_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          last_used_at: string | null
+          metadata: Json | null
+          request_count: number | null
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_used_at?: string | null
+          metadata?: Json | null
+          request_count?: number | null
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_used_at?: string | null
+          metadata?: Json | null
+          request_count?: number | null
+          session_id?: string
+        }
+        Relationships: []
+      }
       geo_features: {
         Row: {
+          auth_user_id: string | null
           created_at: string
           feature_type: string
           geometry: unknown
           id: string
           name: string
           properties: Json | null
+          session_id: string | null
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
+          auth_user_id?: string | null
           created_at?: string
           feature_type: string
           geometry: unknown
           id?: string
           name: string
           properties?: Json | null
+          session_id?: string | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
+          auth_user_id?: string | null
           created_at?: string
           feature_type?: string
           geometry?: unknown
           id?: string
           name?: string
           properties?: Json | null
+          session_id?: string | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
       jobs: {
         Row: {
+          auth_organization_id: string | null
+          auth_user_id: string | null
           completed_at: string | null
           created_at: string
           error_message: string | null
@@ -101,11 +136,14 @@ export type Database = {
           project_id: string | null
           result_data: Json | null
           retry_count: number | null
+          session_id: string | null
           started_at: string | null
           status: Database["public"]["Enums"]["job_status"]
-          user_id: string
+          user_id: string | null
         }
         Insert: {
+          auth_organization_id?: string | null
+          auth_user_id?: string | null
           completed_at?: string | null
           created_at?: string
           error_message?: string | null
@@ -117,11 +155,14 @@ export type Database = {
           project_id?: string | null
           result_data?: Json | null
           retry_count?: number | null
+          session_id?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["job_status"]
-          user_id: string
+          user_id?: string | null
         }
         Update: {
+          auth_organization_id?: string | null
+          auth_user_id?: string | null
           completed_at?: string | null
           created_at?: string
           error_message?: string | null
@@ -133,9 +174,10 @@ export type Database = {
           project_id?: string | null
           result_data?: Json | null
           retry_count?: number | null
+          session_id?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["job_status"]
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -322,8 +364,9 @@ export type Database = {
           id: string
           location: Json | null
           project_id: string
+          session_id: string | null
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           content: string
@@ -331,8 +374,9 @@ export type Database = {
           id?: string
           location?: Json | null
           project_id: string
+          session_id?: string | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           content?: string
@@ -340,8 +384,9 @@ export type Database = {
           id?: string
           location?: Json | null
           project_id?: string
+          session_id?: string | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -393,12 +438,15 @@ export type Database = {
       }
       projects: {
         Row: {
+          auth_organization_id: string | null
+          auth_owner_id: string | null
           created_at: string
           description: string | null
           id: string
           organization_id: string | null
-          owner_id: string
+          owner_id: string | null
           sector: string
+          session_id: string | null
           settings: Json | null
           status: string
           tenant_id: string | null
@@ -406,12 +454,15 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          auth_organization_id?: string | null
+          auth_owner_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
           organization_id?: string | null
-          owner_id: string
+          owner_id?: string | null
           sector: string
+          session_id?: string | null
           settings?: Json | null
           status?: string
           tenant_id?: string | null
@@ -419,12 +470,15 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          auth_organization_id?: string | null
+          auth_owner_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
           organization_id?: string | null
-          owner_id?: string
+          owner_id?: string | null
           sector?: string
+          session_id?: string | null
           settings?: Json | null
           status?: string
           tenant_id?: string | null
@@ -476,6 +530,7 @@ export type Database = {
           generated_by: string | null
           id: string
           project_id: string
+          session_id: string | null
           title: string
         }
         Insert: {
@@ -485,6 +540,7 @@ export type Database = {
           generated_by?: string | null
           id?: string
           project_id: string
+          session_id?: string | null
           title: string
         }
         Update: {
@@ -494,6 +550,7 @@ export type Database = {
           generated_by?: string | null
           id?: string
           project_id?: string
+          session_id?: string | null
           title?: string
         }
         Relationships: [
@@ -574,6 +631,7 @@ export type Database = {
           quantity: number | null
           resource_id: string | null
           resource_type: string
+          session_id: string | null
           user_id: string | null
         }
         Insert: {
@@ -584,6 +642,7 @@ export type Database = {
           quantity?: number | null
           resource_id?: string | null
           resource_type: string
+          session_id?: string | null
           user_id?: string | null
         }
         Update: {
@@ -594,6 +653,7 @@ export type Database = {
           quantity?: number | null
           resource_id?: string | null
           resource_type?: string
+          session_id?: string | null
           user_id?: string | null
         }
         Relationships: [
@@ -913,6 +973,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      check_session_quota: {
+        Args: {
+          requested_quantity?: number
+          resource_type: string
+          session_identifier: string
+        }
+        Returns: boolean
+      }
       create_buffer_geojson: {
         Args: {
           buffer_distance: number
@@ -1214,6 +1282,14 @@ export type Database = {
       longtransactionsenabled: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      migrate_session_to_user: {
+        Args: {
+          session_identifier: string
+          target_organization_id?: string
+          target_user_id: string
+        }
+        Returns: number
       }
       path: {
         Args: { "": unknown }
@@ -2477,6 +2553,16 @@ export type Database = {
       text: {
         Args: { "": unknown }
         Returns: string
+      }
+      track_session_usage: {
+        Args: {
+          metadata?: Json
+          quantity?: number
+          resource_id?: string
+          resource_type: string
+          session_identifier: string
+        }
+        Returns: undefined
       }
       track_usage: {
         Args: {

@@ -10,9 +10,8 @@ interface BufferJobParams {
     units?: 'meters' | 'kilometers' | 'miles' | 'feet';
     steps?: number;
   };
-  organizationId: string;
+  sessionId: string;
   projectId?: string;
-  userId: string;
 }
 
 export class BufferProcessor {
@@ -22,7 +21,7 @@ export class BufferProcessor {
   ) {}
 
   async process(params: BufferJobParams) {
-    const { jobId, parameters, organizationId, projectId, userId } = params;
+    const { jobId, parameters, sessionId, projectId } = params;
     
     this.logger.info(`Starting buffer processing for job ${jobId}`, {
       jobId,
@@ -94,7 +93,7 @@ export class BufferProcessor {
             original_job_id: jobId,
             created_from: 'buffer_operation'
           },
-          user_id: userId
+          session_id: sessionId
         })
         .select()
         .single();

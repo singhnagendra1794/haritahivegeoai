@@ -12,29 +12,24 @@ serve(async (req) => {
   }
 
   try {
-    const authHeader = req.headers.get('Authorization')!;
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
-
-    // Get the current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
-      throw new Error('User not authenticated');
-    }
 
     const { 
       jobType, 
-      organizationId, 
+      sessionId,
       projectId, 
       parameters 
     } = await req.json();
 
-    if (!jobType || !organizationId) {
-      throw new Error('Missing required fields: jobType, organizationId');
+    if (!jobType) {
+      throw new Error('Missing required field: jobType');
     }
+
+    // Generate session ID if not provided
+    const session_id = sessionId || crypto.randomUUID();
 
     // Validate job type
     const validJobTypes = ['ndvi', 'change_detection', 'zonal_stats', 'buffer', 'report_generation'];
@@ -42,41 +37,28 @@ serve(async (req) => {
       throw new Error(`Invalid job type. Must be one of: ${validJobTypes.join(', ')}`);
     }
 
-    // Check organization membership
-    const { data: membership } = await supabase
-      .from('organization_members')
-      .select('role')
-      .eq('organization_id', organizationId)
-      .eq('user_id', user.id)
-      .single();
-
-    if (!membership || !['owner', 'admin', 'member'].includes(membership.role)) {
-      throw new Error('User not authorized to create jobs for this organization');
-    }
-
     // Check quota for jobs
     const { data: quotaCheck, error: quotaError } = await supabase
-      .rpc('check_organization_quota', {
-        org_id: organizationId,
+      .rpc('check_session_quota', {
+        session_identifier: session_id,
         resource_type: 'jobs',
         requested_quantity: 1
       });
 
     if (quotaError || !quotaCheck) {
-      throw new Error('Job quota exceeded for this organization');
+      throw new Error('Daily job limit exceeded for this session');
     }
 
     // Validate project if provided
     if (projectId) {
       const { data: project } = await supabase
         .from('projects')
-        .select('id, organization_id')
+        .select('id')
         .eq('id', projectId)
-        .eq('organization_id', organizationId)
         .single();
 
       if (!project) {
-        throw new Error('Project not found or not accessible');
+        throw new Error('Project not found');
       }
     }
 
@@ -110,9 +92,8 @@ serve(async (req) => {
     const { data: job, error: jobError } = await supabase
       .from('jobs')
       .insert({
-        organization_id: organizationId,
+        session_id: session_id,
         project_id: projectId,
-        user_id: user.id,
         job_type: jobType,
         parameters: validatedParameters,
         status: 'pending'
@@ -126,8 +107,8 @@ serve(async (req) => {
     }
 
     // Track usage
-    await supabase.rpc('track_usage', {
-      org_id: organizationId,
+    await supabase.rpc('track_session_usage', {
+      session_identifier: session_id,
       resource_type: 'jobs',
       quantity: 1,
       resource_id: job.id,
@@ -173,12 +154,13 @@ serve(async (req) => {
     // TODO: For production, send job to Redis/BullMQ queue
     // await addJobToQueue(job.id, jobType, validatedParameters);
 
-    console.log(`Created job ${job.id} of type ${jobType} for organization ${organizationId}`);
+    console.log(`Created job ${job.id} of type ${jobType} for session ${session_id}`);
 
     return new Response(
       JSON.stringify({
         success: true,
         job_id: job.id,
+        session_id: session_id,
         status: 'pending',
         estimated_completion: new Date(Date.now() + (5 * 60 * 1000)).toISOString() // 5 minutes estimate
       }),
