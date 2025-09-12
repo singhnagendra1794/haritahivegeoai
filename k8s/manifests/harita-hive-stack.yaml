@@ -1,0 +1,319 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: harita-hive
+  labels:
+    name: harita-hive
+
+---
+
+# ConfigMap for application configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: harita-config
+  namespace: harita-hive
+data:
+  REDIS_HOST: "redis-master"
+  REDIS_PORT: "6379"
+  MODEL_SERVING_URL: "http://tensorflow-serving:8501"
+  WORKER_CONCURRENCY: "5"
+  HEALTH_CHECK_PORT: "3001"
+  NODE_ENV: "production"
+
+---
+
+# Secret for sensitive configuration
+apiVersion: v1
+kind: Secret
+metadata:
+  name: harita-secrets
+  namespace: harita-hive
+type: Opaque
+data:
+  # Base64 encoded values - replace with actual secrets
+  supabase-url: ""
+  supabase-service-key: ""
+  redis-password: ""
+
+---
+
+# TensorFlow Serving Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tensorflow-serving
+  namespace: harita-hive
+  labels:
+    app: tensorflow-serving
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: tensorflow-serving
+  template:
+    metadata:
+      labels:
+        app: tensorflow-serving
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8501"
+        prometheus.io/path: "/monitoring/prometheus/metrics"
+    spec:
+      containers:
+      - name: tensorflow-serving
+        image: harita-hive/tensorflow-serving:latest
+        ports:
+        - containerPort: 8500
+          name: grpc
+        - containerPort: 8501
+          name: http
+        env:
+        - name: MODEL_BASE_PATH
+          value: "/models"
+        - name: MODEL_CONFIG_FILE
+          value: "/models/models.config"
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /v1/models/ndvi_model
+            port: 8501
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /v1/models/ndvi_model
+            port: 8501
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+---
+
+# TensorFlow Serving Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: tensorflow-serving
+  namespace: harita-hive
+  labels:
+    app: tensorflow-serving
+spec:
+  ports:
+  - port: 8500
+    targetPort: 8500
+    name: grpc
+  - port: 8501
+    targetPort: 8501
+    name: http
+  selector:
+    app: tensorflow-serving
+
+---
+
+# Job Worker Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: harita-job-worker
+  namespace: harita-hive
+  labels:
+    app: harita-job-worker
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: harita-job-worker
+  template:
+    metadata:
+      labels:
+        app: harita-job-worker
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3001"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: worker
+        image: ghcr.io/your-org/harita-hive-worker:latest
+        ports:
+        - containerPort: 3001
+          name: health
+        env:
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: harita-config
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: harita-config
+              key: REDIS_PORT
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: harita-secrets
+              key: redis-password
+        - name: SUPABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: harita-secrets
+              key: supabase-url
+        - name: SUPABASE_SERVICE_ROLE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: harita-secrets
+              key: supabase-service-key
+        - name: MODEL_SERVING_URL
+          valueFrom:
+            configMapKeyRef:
+              name: harita-config
+              key: MODEL_SERVING_URL
+        - name: WORKER_CONCURRENCY
+          valueFrom:
+            configMapKeyRef:
+              name: harita-config
+              key: WORKER_CONCURRENCY
+        - name: HEALTH_CHECK_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: harita-config
+              key: HEALTH_CHECK_PORT
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3001
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3001
+          initialDelaySeconds: 10
+          periodSeconds: 10
+
+---
+
+# Job Worker Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: harita-job-worker
+  namespace: harita-hive
+  labels:
+    app: harita-job-worker
+spec:
+  ports:
+  - port: 3001
+    targetPort: 3001
+    name: health
+  selector:
+    app: harita-job-worker
+
+---
+
+# Horizontal Pod Autoscaler for Job Worker
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: harita-job-worker-hpa
+  namespace: harita-hive
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: harita-job-worker
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+
+---
+
+# Network Policy for enhanced security
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: harita-hive-network-policy
+  namespace: harita-hive
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: harita-hive
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: harita-hive
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 53
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 80
+
+---
+
+# Pod Disruption Budget
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: harita-job-worker-pdb
+  namespace: harita-hive
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: harita-job-worker
+
+---
+
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: tensorflow-serving-pdb
+  namespace: harita-hive
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: tensorflow-serving

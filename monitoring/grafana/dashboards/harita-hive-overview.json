@@ -1,0 +1,108 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "Harita Hive - System Overview",
+    "tags": ["harita-hive", "overview"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "System Health",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "up{job=~\"harita-job-worker|tensorflow-serving|redis\"}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              {"options": {"0": {"text": "DOWN"}}, "type": "value"},
+              {"options": {"1": {"text": "UP"}}, "type": "value"}
+            ]
+          }
+        },
+        "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "Active Jobs",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(redis_db_keys{db=\"db0\"})"
+          }
+        ],
+        "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0}
+      },
+      {
+        "id": 3,
+        "title": "Job Processing Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(jobs_processed_total[5m])",
+            "legendFormat": "Jobs/sec"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+        "xAxis": {"show": true},
+        "yAxis": {"show": true, "min": 0}
+      },
+      {
+        "id": 4,
+        "title": "Model Inference Latency",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, rate(tensorflow_serving_request_latency_seconds_bucket[5m]))",
+            "legendFormat": "p50"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(tensorflow_serving_request_latency_seconds_bucket[5m]))",
+            "legendFormat": "p95"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4}
+      },
+      {
+        "id": 5,
+        "title": "API Request Rate by Endpoint",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total[5m])",
+            "legendFormat": "{{method}} {{endpoint}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 12}
+      },
+      {
+        "id": 6,
+        "title": "Memory Usage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)",
+            "legendFormat": "Memory Usage %"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20}
+      },
+      {
+        "id": 7,
+        "title": "CPU Usage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "100 - (avg by(instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+            "legendFormat": "CPU Usage %"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20}
+      }
+    ],
+    "time": {"from": "now-1h", "to": "now"},
+    "refresh": "5s"
+  }
+}
