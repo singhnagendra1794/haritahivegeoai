@@ -7,6 +7,11 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import Environment from "./pages/Environment";
+import Agriculture from "./pages/Agriculture";
+import UrbanPlanning from "./pages/UrbanPlanning";
+import DisasterManagement from "./pages/DisasterManagement";
+import DataUpload from "./pages/DataUpload";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +27,11 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/app" element={<Dashboard />} />
+            <Route path="/app/environment" element={<Environment />} />
+            <Route path="/app/agriculture" element={<Agriculture />} />
+            <Route path="/app/urban-planning" element={<UrbanPlanning />} />
+            <Route path="/app/disaster-management" element={<DisasterManagement />} />
+            <Route path="/app/data" element={<DataUpload />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

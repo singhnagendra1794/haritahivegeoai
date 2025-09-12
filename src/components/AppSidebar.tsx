@@ -46,7 +46,11 @@ import {
   Trash2,
   Edit,
   MapPin,
-  Layers3
+  Layers3,
+  Leaf,
+  Wheat,
+  Building2,
+  AlertTriangle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -77,11 +81,12 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
   // Navigation items
   const navigationItems = [
     { title: 'Dashboard', url: '/app', icon: BarChart3 },
-    { title: 'Data Ingestion', url: '/app/data', icon: Upload },
-    { title: 'ML Models', url: '/app/models', icon: Brain },
-    { title: 'Automation', url: '/app/automation', icon: Workflow },
-    { title: 'Visualization', url: '/app/visualization', icon: Map },
-    { title: 'Settings', url: '/app/settings', icon: Settings },
+    { title: 'Environment', url: '/app/environment', icon: Leaf, color: 'text-green-600' },
+    { title: 'Agriculture', url: '/app/agriculture', icon: Wheat, color: 'text-amber-600' },
+    { title: 'Urban Planning', url: '/app/urban-planning', icon: Building2, color: 'text-blue-600' },
+    { title: 'Disaster Mgmt', url: '/app/disaster-management', icon: AlertTriangle, color: 'text-red-600' },
+    { title: 'Data Upload', url: '/app/data', icon: Upload },
+    { title: 'AI Models', url: '/app/models', icon: Brain },
   ];
 
   const handleBufferSubmit = async (e: React.FormEvent) => {
@@ -168,20 +173,20 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <NavLink 
-                      to={item.url} 
-                      end={item.url === '/app'}
-                      className={({ isActive }) =>
-                        `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                          isActive 
-                            ? 'bg-forest-primary/10 text-forest-primary border-l-2 border-forest-primary' 
-                            : 'hover:bg-muted/50 text-charcoal-primary/70 hover:text-charcoal-primary'
-                        }`
-                      }
-                    >
-                      <item.icon className="h-4 w-4 flex-shrink-0" />
-                      {!collapsed && <span className="text-sm font-medium">{item.title}</span>}
-                    </NavLink>
+                      <NavLink 
+                        to={item.url} 
+                        end={item.url === '/app'}
+                        className={({ isActive }) =>
+                          `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                            isActive 
+                              ? 'bg-forest-primary/10 text-forest-primary border-l-2 border-forest-primary' 
+                              : 'hover:bg-muted/50 text-charcoal-primary/70 hover:text-charcoal-primary'
+                          }`
+                        }
+                      >
+                        <item.icon className={`h-4 w-4 flex-shrink-0 ${item.color || ''}`} />
+                        {!collapsed && <span className="text-sm font-medium">{item.title}</span>}
+                      </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
