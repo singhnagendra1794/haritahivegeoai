@@ -8,6 +8,9 @@ import TopBar from '@/components/TopBar';
 import FloatingActionButtons from '@/components/FloatingActionButtons';
 import OnboardingTooltips from '@/components/OnboardingTooltips';
 import GeoDashboard from '@/components/GeoDashboard';
+import MapToolbar from '@/components/MapToolbar';
+import DashboardCards from '@/components/DashboardCards';
+import ResultsPanel from '@/components/ResultsPanel';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -20,7 +23,12 @@ const Dashboard = () => {
   const [undoStack, setUndoStack] = useState<any[]>([]);
   const [redoStack, setRedoStack] = useState<any[]>([]);
   const [isFirstVisit, setIsFirstVisit] = useState(false);
-  const [showDashboard, setShowDashboard] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showDashboardView, setShowDashboardView] = useState(false);
+  const [showResultsPanel, setShowResultsPanel] = useState(false);
+  const [resultsPanelExpanded, setResultsPanelExpanded] = useState(false);
+  const [analysisResults, setAnalysisResults] = useState(null);
+  const [processingLogs, setProcessingLogs] = useState<string[]>([]);
   const { user, signOut, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -180,7 +188,82 @@ const Dashboard = () => {
   };
 
   const handleOnboardingComplete = () => {
-    setIsFirstVisit(false);
+    setShowOnboarding(false);
+  };
+
+  // Dashboard and UI handlers
+  const handleDashboardToggle = () => {
+    setShowDashboardView(!showDashboardView);
+  };
+
+  const handleUploadVector = () => {
+    console.log('Upload Vector clicked');
+    setProcessingLogs(prev => [...prev, 'Vector upload initiated...']);
+  };
+
+  const handleUploadRaster = () => {
+    console.log('Upload Raster clicked');
+    setProcessingLogs(prev => [...prev, 'Raster upload initiated...']);
+  };
+
+  const handleConnectAPI = () => {
+    console.log('Connect API clicked');
+    setProcessingLogs(prev => [...prev, 'API connection configured...']);
+  };
+
+  const handleRunBuffer = () => {
+    console.log('Run Buffer clicked');
+    setShowResultsPanel(true);
+    setProcessingLogs(prev => [...prev, 'Buffer analysis started...']);
+    // Simulate processing
+    setTimeout(() => {
+      setAnalysisResults({
+        featuresProcessed: 5,
+        processingTime: '2.3s',
+        totalArea: '150.2 km²',
+        perimeter: '45.8 km'
+      });
+      setProcessingLogs(prev => [...prev, 'Buffer analysis completed successfully']);
+    }, 2000);
+  };
+
+  const handleOverlayAnalysis = () => {
+    console.log('Overlay Analysis clicked');
+    setShowResultsPanel(true);
+    setProcessingLogs(prev => [...prev, 'Overlay analysis started...']);
+  };
+
+  const handleRunMLModel = () => {
+    console.log('Run ML Model clicked');
+    setShowResultsPanel(true);
+    setProcessingLogs(prev => [...prev, 'ML model execution started...']);
+  };
+
+  const handleCreateWorkflow = () => {
+    console.log('Create Workflow clicked');
+    setProcessingLogs(prev => [...prev, 'New workflow created...']);
+  };
+
+  const handleScheduleJob = () => {
+    console.log('Schedule Job clicked');
+    setProcessingLogs(prev => [...prev, 'Job scheduled successfully...']);
+  };
+
+  const handleZonalStats = () => {
+    console.log('Zonal Stats clicked');
+    setShowResultsPanel(true);
+    setProcessingLogs(prev => [...prev, 'Zonal statistics analysis started...']);
+  };
+
+  const handleHotspotDetection = () => {
+    console.log('Hotspot Detection clicked');
+    setShowResultsPanel(true);
+    setProcessingLogs(prev => [...prev, 'Hotspot detection analysis started...']);
+  };
+
+  const handleUploadData = () => {
+    console.log('Upload Data clicked');
+    setProcessingLogs(prev => [...prev, 'Data upload dialog opened...']);
   };
 
   if (loading) {
@@ -213,48 +296,98 @@ const Dashboard = () => {
           {/* Main Content */}
           <div className="flex-1 flex flex-col">
             {/* Top Bar */}
-            <TopBar onDashboardOpen={() => setShowDashboard(true)} />
+            <TopBar onDashboardOpen={handleDashboardToggle} />
             
-            {/* Map Container */}
-            <main className="flex-1 relative" data-map="container">
-              <div className="absolute inset-4">
-                <div className="h-full bg-white rounded-xl shadow-lg overflow-hidden border border-border">
+            {/* Main Content */}
+            <main className="flex-1 relative">
+              {showDashboardView ? (
+                <div className="h-full p-6 overflow-y-auto bg-background">
+                  <div className="max-w-7xl mx-auto">
+                    <div className="mb-6">
+                      <h1 className="text-3xl font-bold text-charcoal-primary">Dashboard</h1>
+                      <p className="text-muted-foreground">Manage your geospatial data and workflows</p>
+                    </div>
+                    
+                    <DashboardCards
+                      onUploadVector={handleUploadVector}
+                      onUploadRaster={handleUploadRaster}
+                      onConnectAPI={handleConnectAPI}
+                      onRunBuffer={handleRunBuffer}
+                      onOverlayAnalysis={handleOverlayAnalysis}
+                      onRunMLModel={handleRunMLModel}
+                      onCreateWorkflow={handleCreateWorkflow}
+                      onScheduleJob={handleScheduleJob}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <>
                   <MapComponent 
                     onFeatureCreated={handleFeatureCreated}
                     bufferedGeometry={bufferedGeometry}
                     visibleFeatures={visibleFeatures}
                     drawingMode={drawingMode}
                   />
-                </div>
-              </div>
+                  
+                  <MapToolbar
+                    drawingMode={drawingMode}
+                    onDrawPolygon={handleDrawPolygon}
+                    onCreateBuffer={handleCreateBuffer}
+                    onUploadData={handleUploadData}
+                    onZonalStats={handleZonalStats}
+                    onHotspotDetection={handleHotspotDetection}
+                    onToggleLayers={handleToggleLayers}
+                    onUndo={handleUndo}
+                    onRedo={handleRedo}
+                    onClearAll={handleClearAll}
+                    canUndo={undoStack.length > 0}
+                    canRedo={redoStack.length > 0}
+                  />
+                  
+                  <FloatingActionButtons
+                    onDrawPolygon={handleDrawPolygon}
+                    onCreateBuffer={handleCreateBuffer}
+                    onUndo={handleUndo}
+                    onRedo={handleRedo}
+                    onClearAll={handleClearAll}
+                    onToggleLayers={handleToggleLayers}
+                    drawingMode={drawingMode}
+                    canUndo={undoStack.length > 0}
+                    canRedo={redoStack.length > 0}
+                  />
+                  
+                  <ResultsPanel
+                    isVisible={showResultsPanel}
+                    onClose={() => setShowResultsPanel(false)}
+                    results={analysisResults}
+                    logs={processingLogs}
+                    isExpanded={resultsPanelExpanded}
+                    onToggleExpand={() => setResultsPanelExpanded(!resultsPanelExpanded)}
+                  />
+                </>
+              )}
               
-              {/* Floating Action Buttons */}
-              <div data-fab="draw">
-                <FloatingActionButtons
-                  onDrawPolygon={handleDrawPolygon}
-                  onCreateBuffer={handleCreateBuffer}
-                  onUndo={handleUndo}
-                  onRedo={handleRedo}
-                  onClearAll={handleClearAll}
-                  onToggleLayers={handleToggleLayers}
-                  canUndo={undoStack.length > 0}
-                  canRedo={redoStack.length > 0}
-                  drawingMode={drawingMode}
+              {showOnboarding && (
+                <OnboardingTooltips 
+                  isFirstVisit={showOnboarding}
+                  onComplete={handleOnboardingComplete}
                 />
-              </div>
+              )}
             </main>
           </div>
           
           {/* Onboarding Tooltips */}
-          <OnboardingTooltips 
-            isFirstVisit={isFirstVisit}
-            onComplete={handleOnboardingComplete}
-          />
+          {showOnboarding && (
+            <OnboardingTooltips 
+              isFirstVisit={showOnboarding}
+              onComplete={handleOnboardingComplete}
+            />
+          )}
           
           {/* Dashboard Modal */}
           <GeoDashboard 
-            isVisible={showDashboard}
-            onClose={() => setShowDashboard(false)}
+            isVisible={false}
+            onClose={() => {}}
           />
         </div>
       </SidebarProvider>

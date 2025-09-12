@@ -1,5 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { 
   DropdownMenu, 
@@ -10,7 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useAuth } from '@/contexts/AuthContext';
-import { LogOut, User, Settings, BarChart3 } from 'lucide-react';
+import { LogOut, User, Settings, BarChart3, Search, Bell } from 'lucide-react';
 import logoImage from '@/assets/logo.jpg';
 
 interface TopBarProps {
@@ -54,8 +55,29 @@ const TopBar: React.FC<TopBarProps> = ({ onDashboardOpen }) => {
         </div>
       </div>
 
+      {/* Center - Search */}
+      <div className="flex-1 max-w-md mx-8 hidden md:block">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input 
+            placeholder="Search datasets, models, workflows..." 
+            className="pl-10 bg-neutral-surface/50 border-border/50 focus:bg-background"
+          />
+        </div>
+      </div>
+
       {/* Right side - Actions and User Menu */}
       <div className="flex items-center gap-3">
+        {/* Notifications */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="hidden md:flex relative hover:bg-forest-primary/10"
+        >
+          <Bell className="h-4 w-4" />
+          <span className="absolute -top-1 -right-1 h-2 w-2 bg-orange-500 rounded-full"></span>
+        </Button>
+
         {/* Dashboard Button */}
         <Button
           variant="outline"

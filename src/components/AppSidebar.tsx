@@ -1,35 +1,55 @@
 import React, { useState } from 'react';
-import {
+import { NavLink, useLocation } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { 
   Sidebar,
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar 
 } from '@/components/ui/sidebar';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { 
-  MapPin, 
-  CircleDot, 
-  Layers3, 
-  Settings, 
-  Loader2,
+  ChevronDown,
+  ChevronRight,
+  Layers,
   Eye,
   EyeOff,
+  CircleDot,
+  BookOpen,
+  Zap,
+  Target,
+  Info,
+  Compass,
+  BarChart3,
+  Upload,
+  Brain,
+  Workflow,
+  Map,
+  Settings,
+  Database,
+  Activity,
+  Loader2,
   Trash2,
-  Edit
+  Edit,
+  MapPin,
+  Layers3
 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface AppSidebarProps {
   storedFeatures: Array<{ id: string; name: string }>;
@@ -44,12 +64,25 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
   onFeatureVisibilityToggle,
   visibleFeatures
 }) => {
-  const [collapsed, setCollapsed] = useState(false);
+  const { state } = useSidebar();
+  const collapsed = state === 'collapsed';
+  const location = useLocation();
+  const currentPath = location.pathname;
   const [selectedFeatureId, setSelectedFeatureId] = useState<string>('');
   const [bufferDistance, setBufferDistance] = useState<string>('1000');
   const [loading, setLoading] = useState(false);
   const { session } = useAuth();
   const { toast } = useToast();
+
+  // Navigation items
+  const navigationItems = [
+    { title: 'Dashboard', url: '/app', icon: BarChart3 },
+    { title: 'Data Ingestion', url: '/app/data', icon: Upload },
+    { title: 'ML Models', url: '/app/models', icon: Brain },
+    { title: 'Automation', url: '/app/automation', icon: Workflow },
+    { title: 'Visualization', url: '/app/visualization', icon: Map },
+    { title: 'Settings', url: '/app/settings', icon: Settings },
+  ];
 
   const handleBufferSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,41 +145,72 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
 
   return (
     <Sidebar className={`${collapsed ? 'w-16' : 'w-80'} border-r border-sidebar-border bg-sidebar transition-all duration-300`}>
-      <SidebarContent className="p-4">
-        {/* Header */}
-        <div className={`flex items-center gap-3 mb-6 ${collapsed ? 'justify-center' : ''}`}>
-          <div className="p-2 bg-forest-primary/10 rounded-lg">
-            <MapPin className="h-5 w-5 text-forest-primary" />
-          </div>
+      <SidebarHeader className="border-b border-border/50">
+        <div className="flex items-center gap-3 px-4 py-3 text-forest-primary">
+          <Compass className="h-6 w-6" />
           {!collapsed && (
             <div>
-              <h2 className="text-lg font-semibold text-sidebar-foreground">GeoAI Tools</h2>
-              <p className="text-xs text-muted-foreground">Spatial analysis toolkit</p>
+              <h2 className="font-semibold text-charcoal-primary">Harita Hive</h2>
+              <p className="text-xs text-muted-foreground">GeoAI Platform</p>
             </div>
           )}
         </div>
+      </SidebarHeader>
+
+      <SidebarContent className="px-2">
+        {/* Main Navigation */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs font-medium text-muted-foreground px-3 py-2">
+            Navigation
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {navigationItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <NavLink 
+                      to={item.url} 
+                      end={item.url === '/app'}
+                      className={({ isActive }) =>
+                        `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                          isActive 
+                            ? 'bg-forest-primary/10 text-forest-primary border-l-2 border-forest-primary' 
+                            : 'hover:bg-muted/50 text-charcoal-primary/70 hover:text-charcoal-primary'
+                        }`
+                      }
+                    >
+                      <item.icon className="h-4 w-4 flex-shrink-0" />
+                      {!collapsed && <span className="text-sm font-medium">{item.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
 
         {!collapsed && (
           <>
-            {/* Drawing Instructions */}
-            <SidebarGroup className="mb-6">
-              <SidebarGroupLabel className="text-forest-primary font-medium">
-                Quick Start Guide
+            {/* Quick Start Guide */}
+            <SidebarGroup>
+              <SidebarGroupLabel className="text-xs font-medium text-muted-foreground px-3 py-2">
+                Quick Start
               </SidebarGroupLabel>
               <SidebarGroupContent>
-                <Card className="bg-sidebar-accent/50 border-sidebar-border">
-                  <CardContent className="p-4 text-sm text-sidebar-foreground space-y-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-forest-primary rounded-full" />
-                      <span>Click map to draw polygons</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-charcoal-primary rounded-full" />
-                      <span>Double-click to finish shape</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-forest-light rounded-full" />
-                      <span>Features save automatically</span>
+                <Card className="mx-3 mb-4 bg-forest-primary/5 border-forest-primary/20">
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="bg-forest-primary/10 p-2 rounded-lg flex-shrink-0">
+                        <BookOpen className="h-4 w-4 text-forest-primary" />
+                      </div>
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium text-charcoal-primary">Get Started</h4>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          1. Draw a polygon on the map<br/>
+                          2. Select it for buffer analysis<br/>
+                          3. Set buffer distance and run
+                        </p>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -160,7 +224,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
                 Buffer Analysis
               </SidebarGroupLabel>
               <SidebarGroupContent>
-                <Card className="bg-sidebar-accent/30 border-sidebar-border">
+                <Card className="mx-3 bg-sidebar-accent/30 border-sidebar-border">
                   <CardContent className="p-4">
                     <form onSubmit={handleBufferSubmit} className="space-y-4">
                       <div className="space-y-2">
@@ -229,7 +293,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
                 </Badge>
               </SidebarGroupLabel>
               <SidebarGroupContent>
-                <div className="space-y-2 max-h-64 overflow-y-auto">
+                <div className="space-y-2 max-h-64 overflow-y-auto px-3">
                   {storedFeatures.length === 0 ? (
                     <div className="text-center py-6">
                       <Layers3 className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
