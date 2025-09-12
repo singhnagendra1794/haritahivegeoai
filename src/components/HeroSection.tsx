@@ -23,11 +23,11 @@ const HeroSection = () => {
           </div>
 
           <div className="mb-12 flex flex-wrap justify-center gap-4">
-            <Button size="lg" className="bg-geo-primary hover:bg-geo-primary/90">
-              Explore Architecture
+            <Button size="lg" className="bg-geo-primary hover:bg-geo-primary/90" asChild>
+              <a href="/app">Launch GeoAI Platform</a>
             </Button>
-            <Button variant="outline" size="lg">
-              View Technology Stack
+            <Button variant="outline" size="lg" asChild>
+              <a href="/auth">Sign In</a>
             </Button>
           </div>
 
