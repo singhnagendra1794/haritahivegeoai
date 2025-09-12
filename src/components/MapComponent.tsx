@@ -13,9 +13,16 @@ const MAPBOX_TOKEN = 'YOUR_MAPBOX_TOKEN_HERE';
 interface MapComponentProps {
   onFeatureCreated?: (featureId: string) => void;
   bufferedGeometry?: any;
+  visibleFeatures?: Set<string>;
+  drawingMode?: boolean;
 }
 
-const MapComponent: React.FC<MapComponentProps> = ({ onFeatureCreated, bufferedGeometry }) => {
+const MapComponent: React.FC<MapComponentProps> = ({ 
+  onFeatureCreated, 
+  bufferedGeometry, 
+  visibleFeatures, 
+  drawingMode 
+}) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const draw = useRef<MapboxDraw | null>(null);

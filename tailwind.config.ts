@@ -48,14 +48,17 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        geo: {
-          primary: "hsl(var(--geo-primary))",
-          secondary: "hsl(var(--geo-secondary))",
-          accent: "hsl(var(--geo-accent))",
+        forest: {
+          primary: "hsl(var(--forest-primary))",
+          light: "hsl(var(--forest-light))",
         },
-        tech: {
-          blue: "hsl(var(--tech-blue))",
-          green: "hsl(var(--tech-green))",
+        charcoal: {
+          primary: "hsl(var(--charcoal-primary))",
+          light: "hsl(var(--charcoal-light))",
+        },
+        neutral: {
+          bg: "hsl(var(--neutral-bg))",
+          surface: "hsl(var(--neutral-surface))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
@@ -72,6 +75,15 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        xl: "calc(var(--radius) + 4px)",
+        "2xl": "calc(var(--radius) + 8px)",
+      },
+      boxShadow: {
+        sm: "var(--shadow-sm)",
+        DEFAULT: "var(--shadow-md)",
+        md: "var(--shadow-md)",
+        lg: "var(--shadow-lg)",
+        forest: "var(--shadow-forest)",
       },
       keyframes: {
         "accordion-down": {
