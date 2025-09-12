@@ -4,6 +4,7 @@ import TechnologyStack from "@/components/TechnologyStack";
 import ScalabilityPatterns from "@/components/ScalabilityPatterns";
 import DataIngestionWorkflow from "@/components/DataIngestionWorkflow";
 import GeospatialMLFramework from "@/components/GeospatialMLFramework";
+import AutomationEngine from "@/components/AutomationEngine";
 import InfrastructureRequirements from "@/components/InfrastructureRequirements";
 import ImplementationRoadmap from "@/components/ImplementationRoadmap";
 
@@ -16,6 +17,7 @@ const Index = () => {
       <ScalabilityPatterns />
       <DataIngestionWorkflow />
       <GeospatialMLFramework />
+      <AutomationEngine />
       <InfrastructureRequirements />
       <ImplementationRoadmap />
       
