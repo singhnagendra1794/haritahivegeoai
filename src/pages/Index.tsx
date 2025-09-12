@@ -5,7 +5,7 @@ import ScalabilityPatterns from "@/components/ScalabilityPatterns";
 import DataIngestionWorkflow from "@/components/DataIngestionWorkflow";
 import GeospatialMLFramework from "@/components/GeospatialMLFramework";
 import AutomationEngine from "@/components/AutomationEngine";
-import GeoDashboard from "@/components/GeoDashboard";
+
 import OpenSourceStrategy from "@/components/OpenSourceStrategy";
 import SecurityCompliance from "@/components/SecurityCompliance";
 import InfrastructureRequirements from "@/components/InfrastructureRequirements";
@@ -21,7 +21,7 @@ const Index = () => {
       <DataIngestionWorkflow />
       <GeospatialMLFramework />
       <AutomationEngine />
-      <GeoDashboard />
+      
       <OpenSourceStrategy />
       <SecurityCompliance />
       <InfrastructureRequirements />
