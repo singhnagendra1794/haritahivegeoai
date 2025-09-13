@@ -85,8 +85,13 @@ async function performSuitabilityAnalysis(request: AnalysisRequest): Promise<Sui
   console.log('Using datasets:', config.datasets);
   console.log('Applied weights:', config.weights);
   
+  // Reusable geo vars for buffer
+  const [centerLng, centerLat] = request.region.data.center;
+  const radiusKm = request.region.data.radius;
+  const kmToDegree = 1 / 111; // rough conversion
+  
   // Calculate buffer area for processing time estimation
-  const bufferArea = Math.PI * request.region.data.radius * request.region.data.radius;
+  const bufferArea = Math.PI * radiusKm * radiusKm;
   const processingTime = Math.min(6000, Math.max(2000, bufferArea * 100)); // 2-6 seconds based on area
   
   console.log(`Processing ${bufferArea.toFixed(1)} km² area, estimated time: ${processingTime}ms`);
@@ -145,17 +150,10 @@ async function performSuitabilityAnalysis(request: AnalysisRequest): Promise<Sui
     const finalScore = Math.min(0.95, Math.max(0.2, overallScore + siteRankModifier + ((Math.random() - 0.5) * 0.1)));
     
     // Generate coordinates within the buffer radius
-    const [centerLng, centerLat] = request.region.data.center;
-    const radiusKm = request.region.data.radius;
-    
-    // Convert km to approximate degrees (rough conversion)
-    const kmToDegree = 1 / 111; // Very rough approximation
-    const maxOffset = radiusKm * kmToDegree * 0.8; // Stay within 80% of buffer to ensure we're inside
-    
     const angle = Math.random() * 2 * Math.PI;
-    const distance = Math.random() * maxOffset;
-    const latOffset = distance * Math.cos(angle);
-    const lngOffset = distance * Math.sin(angle);
+    const distanceDeg = (Math.random() * radiusKm * kmToDegree) * 0.8; // within 80% of buffer
+    const latOffset = distanceDeg * Math.cos(angle);
+    const lngOffset = distanceDeg * Math.sin(angle);
     
     const siteLat = centerLat + latOffset;
     const siteLng = centerLng + lngOffset;
