@@ -14,6 +14,7 @@ interface AnalysisRequest {
     data: any;
     name: string;
   };
+  sessionId?: string; // Optional session ID for tracking
 }
 
 interface SuitabilityResult {
@@ -215,7 +216,7 @@ serve(async (req) => {
     // Perform the suitability analysis
     const result = await performSuitabilityAnalysis(analysisRequest);
 
-    // Store the analysis in the database (optional - for tracking/caching)
+    // Store the analysis in the database with session ID (no user required)
     const { error: dbError } = await supabase
       .from('analysis_results')
       .insert({
@@ -224,7 +225,8 @@ serve(async (req) => {
         parameters: {
           project_type: analysisRequest.projectType,
           region: analysisRequest.region,
-          weights: analysisRequest.weights
+          weights: analysisRequest.weights,
+          session_id: analysisRequest.sessionId || crypto.randomUUID()
         },
         result_data: result,
         status: 'completed'

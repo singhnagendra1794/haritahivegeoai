@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Download, MapPin, BarChart3 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Download, MapPin, BarChart3 } from 'lucide-react';
 import { ProjectTypeSelector } from '@/components/suitability/ProjectTypeSelector';
 import { RegionSelector } from '@/components/suitability/RegionSelector';
 import { SuitabilityMap } from '@/components/suitability/SuitabilityMap';
 import { ResultsPanel } from '@/components/suitability/ResultsPanel';
 import { useToast } from '@/hooks/use-toast';
+import logoImage from '@/assets/logo.jpg';
 
 type AnalysisStep = 'project-type' | 'region' | 'analysis' | 'results';
 
@@ -58,6 +58,9 @@ const SuitabilityAnalysis = () => {
 
     setIsAnalyzing(true);
     try {
+      // Generate a temporary session ID for this analysis
+      const sessionId = crypto.randomUUID();
+      
       const response = await fetch('https://letyizogbpeyclzvsagt.supabase.co/functions/v1/suitability-analysis', {
         method: 'POST',
         headers: { 
@@ -68,6 +71,7 @@ const SuitabilityAnalysis = () => {
           projectType: projectConfig.type,
           weights: projectConfig.weights,
           region: selectedRegion,
+          sessionId: sessionId, // Include session ID
         }),
       });
 
@@ -78,8 +82,8 @@ const SuitabilityAnalysis = () => {
       setCurrentStep('results');
       
       toast({
-        title: "Analysis Complete",
-        description: "Site suitability analysis completed successfully",
+        title: "Analysis Complete! 🎉",
+        description: `Found ${result.topSites.length} suitable sites for ${projectConfig.type.toLowerCase()}`,
       });
     } catch (error) {
       toast({
@@ -133,15 +137,27 @@ const SuitabilityAnalysis = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Link to="/" className="flex items-center gap-2 text-muted-foreground hover:text-forest-primary transition-colors">
-                <ArrowLeft className="w-4 h-4" />
-                Back to Home
-              </Link>
-              <div className="h-6 w-px bg-border" />
-              <div>
-                <h1 className="text-xl font-bold text-charcoal-primary">Site Suitability Analysis</h1>
-                <p className="text-sm text-muted-foreground">GeoAI-powered site selection</p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl overflow-hidden bg-forest-primary/10 flex items-center justify-center">
+                  <img 
+                    src={logoImage} 
+                    alt="Harita Hive" 
+                    className="w-8 h-8 object-cover"
+                  />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-charcoal-primary">Harita Hive</h1>
+                  <p className="text-sm text-muted-foreground">Site Suitability Analysis</p>
+                </div>
               </div>
+              {currentStep === 'project-type' && (
+                <div className="ml-8 flex items-center gap-2 text-muted-foreground">
+                  <div className="h-6 w-px bg-border" />
+                  <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                    Free • No Login Required
+                  </Badge>
+                </div>
+              )}
             </div>
             {currentStep === 'results' && (
               <div className="flex items-center gap-2">
