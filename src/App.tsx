@@ -15,6 +15,7 @@ import DisasterManagement from "./pages/DisasterManagement";
 import DataUpload from "./pages/DataUpload";
 import Pricing from "./pages/Pricing";
 import Billing from "./pages/Billing";
+import SuitabilityAnalysis from "./pages/SuitabilityAnalysis";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/suitability" element={<SuitabilityAnalysis />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/app" element={<Dashboard />} />
               <Route path="/app/pricing" element={<Pricing />} />

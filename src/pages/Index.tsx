@@ -105,17 +105,17 @@ const Index = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Link to="/app">
+            <Link to="/suitability">
               <Button size="lg" className="bg-forest-primary hover:bg-forest-primary/90 text-lg px-8 py-6">
                 <MapIcon className="w-5 h-5 mr-2" />
-                Launch Platform
+                Start Site Analysis
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </Link>
-            <Link to="/auth">
+            <Link to="/app">
               <Button variant="outline" size="lg" className="text-lg px-8 py-6">
                 <Users className="w-5 h-5 mr-2" />
-                Sign In
+                Full Platform
               </Button>
             </Link>
           </div>
