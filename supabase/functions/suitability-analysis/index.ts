@@ -10,8 +10,12 @@ interface AnalysisRequest {
   projectType: string;
   weights: Record<string, number>;
   region: {
-    type: 'polygon' | 'district' | 'shapefile';
-    data: any;
+    type: 'buffer';
+    data: {
+      center: [number, number];
+      radius: number;
+      address: string;
+    };
     name: string;
   };
   sessionId?: string; // Optional session ID for tracking
@@ -65,7 +69,9 @@ const projectConfigurations = {
 
 async function performSuitabilityAnalysis(request: AnalysisRequest): Promise<SuitabilityResult> {
   console.log('Starting GeoAI suitability analysis for:', request.projectType);
-  console.log('Region:', request.region.name, `(${request.region.type})`);
+  console.log('Buffer region:', request.region.name);
+  console.log('Center coordinates:', request.region.data.center);
+  console.log('Buffer radius:', request.region.data.radius, 'km');
   
   // Generate project ID
   const projectId = crypto.randomUUID();
@@ -79,9 +85,11 @@ async function performSuitabilityAnalysis(request: AnalysisRequest): Promise<Sui
   console.log('Using datasets:', config.datasets);
   console.log('Applied weights:', config.weights);
   
-  // Simulate realistic GeoAI processing time based on region size
-  const processingTime = request.region.type === 'district' ? 4000 : 
-                        request.region.type === 'shapefile' ? 5000 : 3000;
+  // Calculate buffer area for processing time estimation
+  const bufferArea = Math.PI * request.region.data.radius * request.region.data.radius;
+  const processingTime = Math.min(6000, Math.max(2000, bufferArea * 100)); // 2-6 seconds based on area
+  
+  console.log(`Processing ${bufferArea.toFixed(1)} km² area, estimated time: ${processingTime}ms`);
   await new Promise(resolve => setTimeout(resolve, processingTime));
   
   // Generate realistic suitability scores based on project type and optimal ranges
@@ -136,12 +144,21 @@ async function performSuitabilityAnalysis(request: AnalysisRequest): Promise<Sui
     
     const finalScore = Math.min(0.95, Math.max(0.2, overallScore + siteRankModifier + ((Math.random() - 0.5) * 0.1)));
     
-    // Generate coordinates with regional clustering
-    const baseLat = request.region.type === 'district' ? 12.9716 : 20.5937; // Bangalore or India center
-    const baseLng = request.region.type === 'district' ? 77.5946 : 78.9629;
+    // Generate coordinates within the buffer radius
+    const [centerLng, centerLat] = request.region.data.center;
+    const radiusKm = request.region.data.radius;
     
-    const latVariation = (Math.random() - 0.5) * 2; // ±1 degree
-    const lngVariation = (Math.random() - 0.5) * 2;
+    // Convert km to approximate degrees (rough conversion)
+    const kmToDegree = 1 / 111; // Very rough approximation
+    const maxOffset = radiusKm * kmToDegree * 0.8; // Stay within 80% of buffer to ensure we're inside
+    
+    const angle = Math.random() * 2 * Math.PI;
+    const distance = Math.random() * maxOffset;
+    const latOffset = distance * Math.cos(angle);
+    const lngOffset = distance * Math.sin(angle);
+    
+    const siteLat = centerLat + latOffset;
+    const siteLng = centerLng + lngOffset;
     
     // Site areas vary by project type
     let areaRange: [number, number];
@@ -164,19 +181,28 @@ async function performSuitabilityAnalysis(request: AnalysisRequest): Promise<Sui
     return {
       id: `${request.projectType.toLowerCase().replace(/\s+/g, '_')}_site_${index + 1}`,
       score: finalScore,
-      coordinates: [baseLng + lngVariation, baseLat + latVariation] as [number, number],
+      coordinates: [siteLng, siteLat] as [number, number],
       area: Math.round(area * 10) / 10
     };
   }).sort((a, b) => b.score - a.score);
   
-  console.log(`GeoAI analysis complete. Generated top 5 sites with scores: ${topSites.map(s => (s.score * 100).toFixed(1) + '%').join(', ')}`);
+  console.log(`GeoAI analysis complete for ${radiusKm}km buffer. Generated top 5 sites with scores: ${topSites.map(s => (s.score * 100).toFixed(1) + '%').join(', ')}`);
   
   return {
     projectId,
     suitabilityData: {
       rasterUrl: `https://example.com/raster/${projectId}.tif`, // Mock raster URL
       resolution: 30, // 30m resolution from Landsat/Sentinel
-      extent: request.region.data,
+      extent: {
+        center: request.region.data.center,
+        radius: request.region.data.radius,
+        bounds: {
+          north: centerLat + (radiusKm * kmToDegree),
+          south: centerLat - (radiusKm * kmToDegree),
+          east: centerLng + (radiusKm * kmToDegree),
+          west: centerLng - (radiusKm * kmToDegree)
+        }
+      },
       datasets_used: config.datasets
     },
     topSites,
@@ -210,7 +236,9 @@ serve(async (req) => {
     console.log('Received analysis request:', {
       projectType: analysisRequest.projectType,
       regionType: analysisRequest.region.type,
-      regionName: analysisRequest.region.name
+      regionName: analysisRequest.region.name,
+      bufferRadius: analysisRequest.region.data.radius,
+      centerCoordinates: analysisRequest.region.data.center
     });
 
     // Perform the suitability analysis

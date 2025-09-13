@@ -18,8 +18,12 @@ interface ProjectConfig {
 }
 
 interface Region {
-  type: 'polygon' | 'district' | 'shapefile';
-  data: any;
+  type: 'buffer';
+  data: {
+    center: [number, number];
+    radius: number;
+    address: string;
+  };
   name: string;
 }
 
@@ -239,10 +243,10 @@ const SuitabilityAnalysis = () => {
               <CardHeader className="text-center">
                 <CardTitle>Ready to Analyze</CardTitle>
               <CardDescription>
-                Our GeoAI engine will analyze your region using multiple datasets: DEM (slope), land cover (ESA WorldCover), 
+                Our GeoAI engine will analyze your {selectedRegion.data.radius}km buffer area using multiple datasets: DEM (slope), land cover (ESA WorldCover), 
                 infrastructure (OpenStreetMap), {projectConfig.type === 'Solar Farm' ? 'solar radiation, and grid connectivity' : 
                 projectConfig.type === 'Battery Energy Storage (BESS)' ? 'grid connectivity, and suitable land use' : 
-                'soil fertility (FAO SoilGrids), and rainfall (WorldClim)'} to identify the top 5 most suitable sites.
+                'soil fertility (FAO SoilGrids), and rainfall (WorldClim)'} to identify the top 5 most suitable sites within the buffer zone.
               </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -254,9 +258,12 @@ const SuitabilityAnalysis = () => {
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Region</label>
-                    <div className="mt-1">
-                      <Badge variant="outline">{selectedRegion.name}</Badge>
+                    <label className="text-sm font-medium text-muted-foreground">Analysis Area</label>
+                    <div className="mt-1 space-y-1">
+                      <Badge variant="outline">{selectedRegion.data.radius}km Buffer</Badge>
+                      <p className="text-xs text-muted-foreground">
+                        Center: {selectedRegion.data.center[1].toFixed(4)}, {selectedRegion.data.center[0].toFixed(4)}
+                      </p>
                     </div>
                   </div>
                 </div>

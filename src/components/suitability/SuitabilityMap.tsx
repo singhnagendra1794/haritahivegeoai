@@ -17,8 +17,12 @@ interface AnalysisResult {
 }
 
 interface Region {
-  type: 'polygon' | 'district' | 'shapefile';
-  data: any;
+  type: 'buffer';
+  data: {
+    center: [number, number];
+    radius: number;
+    address: string;
+  };
   name: string;
 }
 
@@ -91,19 +95,72 @@ export const SuitabilityMap: React.FC<SuitabilityMapProps> = ({ result, region }
     // Initialize real map with Mapbox token
     mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
 
+    // Calculate zoom level based on buffer radius
+    const getZoomLevel = (radiusKm: number) => {
+      if (radiusKm <= 2) return 12;
+      if (radiusKm <= 5) return 10;
+      return 8;
+    };
+
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/satellite-streets-v12',
-      center: [77.5946, 12.9716], // Default to Bangalore
-      zoom: 10,
+      center: region.data.center,
+      zoom: getZoomLevel(region.data.radius),
     });
 
     // Add navigation controls
     map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
     map.current.on('load', () => {
-      // Add heatmap layer (in real implementation, this would use actual raster data)
-      // For now, we'll add markers for top sites
+      // Add buffer circle visualization
+      map.current!.addSource('buffer-circle', {
+        type: 'geojson',
+        data: {
+          type: 'Feature',
+          properties: {},
+          geometry: {
+            type: 'Point',
+            coordinates: region.data.center
+          }
+        }
+      });
+
+      // Add buffer circle layer
+      map.current!.addLayer({
+        id: 'buffer-fill',
+        type: 'circle',
+        source: 'buffer-circle',
+        paint: {
+          'circle-radius': {
+            stops: [
+              [8, region.data.radius * 8],
+              [12, region.data.radius * 32],
+              [16, region.data.radius * 128]
+            ]
+          },
+          'circle-color': '#22c55e',
+          'circle-opacity': 0.1,
+          'circle-stroke-color': '#22c55e',
+          'circle-stroke-width': 2,
+          'circle-stroke-opacity': 0.8
+        }
+      });
+
+      // Add center point
+      map.current!.addLayer({
+        id: 'buffer-center',
+        type: 'circle',
+        source: 'buffer-circle',
+        paint: {
+          'circle-radius': 6,
+          'circle-color': '#ef4444',
+          'circle-stroke-color': '#ffffff',
+          'circle-stroke-width': 2
+        }
+      });
+
+      // Add markers for top sites
       result.topSites.forEach((site, index) => {
         const el = document.createElement('div');
         el.className = 'marker';

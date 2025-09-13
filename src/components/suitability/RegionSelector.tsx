@@ -1,23 +1,23 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
-  Upload, 
-  Edit3, 
   MapPin, 
-  FileText,
-  AlertCircle,
-  CheckCircle
+  Search,
+  Target,
+  Info
 } from 'lucide-react';
-import { InteractiveMap } from './InteractiveMap';
 import { useToast } from '@/hooks/use-toast';
 
 interface Region {
-  type: 'polygon' | 'district' | 'shapefile';
-  data: any;
+  type: 'buffer';
+  data: {
+    center: [number, number];
+    radius: number;
+    address: string;
+  };
   name: string;
 }
 
@@ -26,78 +26,111 @@ interface RegionSelectorProps {
   projectType: string;
 }
 
-const sampleDistricts = [
-  { id: 'bengaluru-urban', name: 'Bengaluru Urban', state: 'Karnataka' },
-  { id: 'mumbai', name: 'Mumbai', state: 'Maharashtra' },
-  { id: 'delhi', name: 'New Delhi', state: 'Delhi' },
-  { id: 'hyderabad', name: 'Hyderabad', state: 'Telangana' },
-  { id: 'pune', name: 'Pune', state: 'Maharashtra' },
-  { id: 'chennai', name: 'Chennai', state: 'Tamil Nadu' },
-];
+const getBufferRadius = (projectType: string): number => {
+  switch (projectType) {
+    case 'Solar Farm':
+      return 1.5; // 1.5 km default, can be 1-2km
+    case 'Battery Energy Storage (BESS)':
+      return 2; // 2 km
+    case 'Agriculture':
+      return 5; // 5 km
+    default:
+      return 2;
+  }
+};
 
 export const RegionSelector: React.FC<RegionSelectorProps> = ({ onSelect, projectType }) => {
-  const [selectedTab, setSelectedTab] = useState('draw');
-  const [drawnPolygon, setDrawnPolygon] = useState<any>(null);
-  const [selectedDistrict, setSelectedDistrict] = useState<string>('');
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [addressInput, setAddressInput] = useState('');
+  const [isGeocoding, setIsGeocoding] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<{
+    coordinates: [number, number];
+    address: string;
+  } | null>(null);
   const { toast } = useToast();
 
-  const handlePolygonDrawn = (polygon: any) => {
-    setDrawnPolygon(polygon);
-    toast({
-      title: "Region Drawn",
-      description: "You can now proceed with this region or continue editing.",
-    });
-  };
+  const bufferRadius = getBufferRadius(projectType);
 
-  const handleDistrictSelect = (districtId: string) => {
-    setSelectedDistrict(districtId);
-    const district = sampleDistricts.find(d => d.id === districtId);
-    if (district) {
-      onSelect({
-        type: 'district',
-        data: { id: districtId, bounds: null }, // In real app, would fetch district boundaries
-        name: `${district.name}, ${district.state}`
+  const handleGeocode = async () => {
+    if (!addressInput.trim()) {
+      toast({
+        title: "Please enter an address",
+        description: "Enter an address or coordinates to continue",
+        variant: "destructive",
       });
+      return;
     }
-  };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (file.name.endsWith('.shp') || file.name.endsWith('.zip')) {
-        setUploadedFile(file);
-        // In real app, would parse the shapefile
-        toast({
-          title: "File Uploaded",
-          description: `${file.name} uploaded successfully. Processing shapefile...`,
-        });
+    setIsGeocoding(true);
+    try {
+      // Check if input looks like coordinates (lat, lon)
+      const coordMatch = addressInput.match(/^(-?\d+\.?\d*),\s*(-?\d+\.?\d*)$/);
+      
+      if (coordMatch) {
+        // Input is coordinates
+        const lat = parseFloat(coordMatch[1]);
+        const lon = parseFloat(coordMatch[2]);
         
-        // Simulate processing
-        setTimeout(() => {
-          onSelect({
-            type: 'shapefile',
-            data: { file: file, geometry: null },
-            name: file.name
+        if (lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
+          const location = {
+            coordinates: [lon, lat] as [number, number],
+            address: `${lat.toFixed(4)}, ${lon.toFixed(4)}`
+          };
+          setSelectedLocation(location);
+          
+          toast({
+            title: "Location Found",
+            description: `Using coordinates: ${location.address}`,
           });
-        }, 2000);
+        } else {
+          throw new Error('Invalid coordinates');
+        }
       } else {
+        // Input is an address - use Nominatim for geocoding
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressInput)}&limit=1&addressdetails=1`
+        );
+        
+        if (!response.ok) throw new Error('Geocoding failed');
+        
+        const results = await response.json();
+        
+        if (results.length === 0) {
+          throw new Error('Location not found');
+        }
+        
+        const result = results[0];
+        const location = {
+          coordinates: [parseFloat(result.lon), parseFloat(result.lat)] as [number, number],
+          address: result.display_name
+        };
+        setSelectedLocation(location);
+        
         toast({
-          title: "Invalid File Type",
-          description: "Please upload a shapefile (.shp) or zipped shapefile (.zip)",
-          variant: "destructive",
+          title: "Location Found",
+          description: result.display_name,
         });
       }
+    } catch (error) {
+      toast({
+        title: "Geocoding Failed",
+        description: "Could not find the specified location. Please try a different address or coordinates.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeocoding(false);
     }
   };
 
-  const proceedWithDrawnRegion = () => {
-    if (drawnPolygon) {
+  const handleConfirmLocation = () => {
+    if (selectedLocation) {
       onSelect({
-        type: 'polygon',
-        data: drawnPolygon,
-        name: 'Custom Drawn Region'
+        type: 'buffer',
+        data: {
+          center: selectedLocation.coordinates,
+          radius: bufferRadius,
+          address: selectedLocation.address
+        },
+        name: `${bufferRadius}km buffer around ${selectedLocation.address}`
       });
     }
   };
@@ -106,178 +139,107 @@ export const RegionSelector: React.FC<RegionSelectorProps> = ({ onSelect, projec
     <div className="space-y-6">
       <div className="text-center">
         <h2 className="text-2xl font-bold text-charcoal-primary mb-2">
-          Select Region of Interest
+          Enter Location
         </h2>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          Define the area where you want to analyze {projectType.toLowerCase()} suitability. 
-          You can draw on the map, select a district, or upload a shapefile.
+          Enter an address or coordinates to analyze {projectType.toLowerCase()} suitability. 
+          We'll automatically create a {bufferRadius}km analysis area around your location.
         </p>
       </div>
 
-      <Card className="max-w-5xl mx-auto">
+      <Card className="max-w-2xl mx-auto">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-forest-primary" />
-            Region Selection
+            <Search className="w-5 h-5 text-forest-primary" />
+            Location Input
           </CardTitle>
           <CardDescription>
-            Choose your preferred method to define the analysis area
+            System will auto-generate a {bufferRadius}km buffer for {projectType.toLowerCase()} analysis
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="draw" className="flex items-center gap-2">
-                <Edit3 className="w-4 h-4" />
-                Draw Polygon
-              </TabsTrigger>
-              <TabsTrigger value="district" className="flex items-center gap-2">
-                <MapPin className="w-4 h-4" />
-                Select District
-              </TabsTrigger>
-              <TabsTrigger value="upload" className="flex items-center gap-2">
-                <Upload className="w-4 h-4" />
-                Upload Shapefile
-              </TabsTrigger>
-            </TabsList>
+        <CardContent className="space-y-6">
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                Address or Coordinates
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="e.g., Mumbai, India or 19.0760, 72.8777"
+                  value={addressInput}
+                  onChange={(e) => setAddressInput(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleGeocode()}
+                  className="flex-1"
+                />
+                <Button 
+                  onClick={handleGeocode}
+                  disabled={isGeocoding || !addressInput.trim()}
+                >
+                  {isGeocoding ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  ) : (
+                    <Search className="w-4 h-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
 
-            <TabsContent value="draw" className="space-y-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <Info className="w-5 h-5 text-blue-600 mt-0.5" />
+                <div>
+                  <h4 className="font-medium text-blue-900 mb-1">Auto Buffer Generation</h4>
+                  <p className="text-sm text-blue-700">
+                    Based on your project type, we'll create a {bufferRadius}km radius analysis area. 
+                    You can enter city names, full addresses, or latitude,longitude coordinates.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {selectedLocation && (
               <div className="space-y-4">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+                <div className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Target className="w-5 h-5 text-green-600" />
                     <div>
-                      <h4 className="font-medium text-blue-900 mb-1">Drawing Instructions</h4>
-                      <p className="text-sm text-blue-700">
-                        Click on the map to start drawing a polygon. Click each point to define your region, 
-                        then click the first point again to close the polygon.
+                      <p className="font-medium text-green-900">Location Confirmed</p>
+                      <p className="text-sm text-green-700 max-w-md truncate">
+                        {selectedLocation.address}
                       </p>
                     </div>
                   </div>
+                  <Badge variant="secondary" className="bg-forest-primary/10 text-forest-primary">
+                    {bufferRadius}km Buffer
+                  </Badge>
                 </div>
 
-                <div className="h-96 rounded-lg overflow-hidden border border-border">
-                  <InteractiveMap 
-                    onPolygonDrawn={handlePolygonDrawn}
-                    allowDrawing={true}
-                  />
-                </div>
-
-                {drawnPolygon && (
-                  <div className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="w-5 h-5 text-green-600" />
-                      <div>
-                        <p className="font-medium text-green-900">Region Defined</p>
-                        <p className="text-sm text-green-700">
-                          Polygon with {drawnPolygon.coordinates?.[0]?.length || 0} points
-                        </p>
-                      </div>
-                    </div>
-                    <Button onClick={proceedWithDrawnRegion}>
-                      Use This Region
-                    </Button>
+                <div className="grid grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Coordinates</p>
+                    <p className="font-mono text-sm">
+                      {selectedLocation.coordinates[1].toFixed(4)}, {selectedLocation.coordinates[0].toFixed(4)}
+                    </p>
                   </div>
-                )}
+                  <div>
+                    <p className="text-xs text-muted-foreground">Analysis Area</p>
+                    <p className="text-sm font-medium">
+                      ~{(Math.PI * bufferRadius * bufferRadius).toFixed(1)} km²
+                    </p>
+                  </div>
+                </div>
+
+                <Button 
+                  onClick={handleConfirmLocation}
+                  className="w-full bg-forest-primary hover:bg-forest-primary/90"
+                  size="lg"
+                >
+                  <MapPin className="w-4 h-4 mr-2" />
+                  Confirm Location & Create Analysis Area
+                </Button>
               </div>
-            </TabsContent>
-
-            <TabsContent value="district" className="space-y-4">
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground mb-2 block">
-                    Select District
-                  </label>
-                  <Select value={selectedDistrict} onValueChange={handleDistrictSelect}>
-                    <SelectTrigger className="bg-background">
-                      <SelectValue placeholder="Choose a district..." />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background z-50 border border-border shadow-lg">
-                      {sampleDistricts.map((district) => (
-                        <SelectItem key={district.id} value={district.id} className="focus:bg-muted">
-                          {district.name}, {district.state}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <div className="flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
-                    <div>
-                      <h4 className="font-medium text-yellow-900 mb-1">District Boundaries</h4>
-                      <p className="text-sm text-yellow-700">
-                        Administrative boundaries are automatically loaded from our database. 
-                        The analysis will cover the entire district area.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="upload" className="space-y-4">
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground mb-2 block">
-                    Upload Shapefile
-                  </label>
-                  <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".shp,.zip"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                    />
-                    {uploadedFile ? (
-                      <div className="space-y-3">
-                        <FileText className="w-12 h-12 text-forest-primary mx-auto" />
-                        <div>
-                          <p className="font-medium text-charcoal-primary">{uploadedFile.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
-                          </p>
-                        </div>
-                        <Badge variant="secondary">Processing...</Badge>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        <Upload className="w-12 h-12 text-muted-foreground mx-auto" />
-                        <div>
-                          <p className="font-medium text-charcoal-primary">Upload Shapefile</p>
-                          <p className="text-sm text-muted-foreground">
-                            Drop your .shp file or zipped shapefile here
-                          </p>
-                        </div>
-                        <Button
-                          variant="outline"
-                          onClick={() => fileInputRef.current?.click()}
-                        >
-                          Choose File
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-start gap-3">
-                    <FileText className="w-5 h-5 text-gray-600 mt-0.5" />
-                    <div>
-                      <h4 className="font-medium text-gray-900 mb-1">Supported Formats</h4>
-                      <ul className="text-sm text-gray-700 space-y-1">
-                        <li>• ESRI Shapefile (.shp with associated files)</li>
-                        <li>• Zipped shapefile containing .shp, .shx, .dbf files</li>
-                        <li>• Maximum file size: 50MB</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>
