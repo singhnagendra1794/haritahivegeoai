@@ -6,6 +6,7 @@ import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import MapboxTokenGate from '@/components/MapboxTokenGate';
 
 // You'll need to add your Mapbox token here
 const MAPBOX_TOKEN = 'YOUR_MAPBOX_TOKEN_HERE';
@@ -29,11 +30,21 @@ const MapComponent: React.FC<MapComponentProps> = ({
   const [mapLoaded, setMapLoaded] = useState(false);
   const { session } = useAuth();
   const { toast } = useToast();
+  const [token, setToken] = useState<string | null>(() => {
+    try {
+      const stored = typeof window !== 'undefined' ? localStorage.getItem('mapbox_public_token') : null;
+      const envToken = (import.meta as any).env?.VITE_MAPBOX_ACCESS_TOKEN as string | undefined;
+      return stored || envToken || (MAPBOX_TOKEN !== 'YOUR_MAPBOX_TOKEN_HERE' ? MAPBOX_TOKEN : null);
+    } catch {
+      const envToken = (import.meta as any).env?.VITE_MAPBOX_ACCESS_TOKEN as string | undefined;
+      return envToken || (MAPBOX_TOKEN !== 'YOUR_MAPBOX_TOKEN_HERE' ? MAPBOX_TOKEN : null);
+    }
+  });
 
   useEffect(() => {
-    if (!mapContainer.current) return;
+    if (!mapContainer.current || !token) return;
 
-    mapboxgl.accessToken = MAPBOX_TOKEN;
+    mapboxgl.accessToken = token;
     
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
@@ -68,7 +79,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
     return () => {
       map.current?.remove();
     };
-  }, []);
+  }, [token]);
 
   // Add buffered geometry to map
   useEffect(() => {
@@ -163,27 +174,13 @@ const MapComponent: React.FC<MapComponentProps> = ({
     }
   };
 
-  if (MAPBOX_TOKEN === 'YOUR_MAPBOX_TOKEN_HERE') {
+  if (!token) {
     return (
-      <div className="flex items-center justify-center h-full bg-muted rounded-lg">
-        <div className="text-center p-8">
-          <h3 className="text-lg font-semibold mb-2">Mapbox Token Required</h3>
-          <p className="text-muted-foreground mb-4">
-            Please add your Mapbox public token to use the map component.
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Get your token at{' '}
-            <a 
-              href="https://mapbox.com/" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-geo-primary hover:underline"
-            >
-              mapbox.com
-            </a>
-          </p>
-        </div>
-      </div>
+      <MapboxTokenGate 
+        onTokenSaved={(t) => setToken(t)}
+        title="Mapbox Token Required"
+        description="Enter your Mapbox public token to enable drawing and viewing on the map."
+      />
     );
   }
 

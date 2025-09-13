@@ -1,8 +1,9 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, TrendingUp } from 'lucide-react';
+import MapboxTokenGate from '@/components/MapboxTokenGate';
 
 interface AnalysisResult {
   projectId: string;
@@ -34,12 +35,26 @@ interface SuitabilityMapProps {
 export const SuitabilityMap: React.FC<SuitabilityMapProps> = ({ result, region }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
-
+  const [token, setToken] = useState<string | null>(() => {
+    try {
+      const stored = typeof window !== 'undefined' ? localStorage.getItem('mapbox_public_token') : null;
+      const envToken = (import.meta as any).env?.VITE_MAPBOX_ACCESS_TOKEN as string | undefined;
+      return stored || envToken || null;
+    } catch {
+      const envToken = (import.meta as any).env?.VITE_MAPBOX_ACCESS_TOKEN as string | undefined;
+      return envToken || null;
+    }
+  });
   useEffect(() => {
     if (!mapContainer.current) return;
 
+    if (!token) {
+      if (mapContainer.current) mapContainer.current.innerHTML = '';
+      return;
+    }
+
     // Check if using demo token
-    const isDemoToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN === 'pk.demo_token';
+    const isDemoToken = token === 'pk.demo_token';
     
     if (isDemoToken) {
       // Show demo visualization
@@ -93,7 +108,7 @@ export const SuitabilityMap: React.FC<SuitabilityMapProps> = ({ result, region }
     }
 
     // Initialize real map with Mapbox token
-    mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
+    mapboxgl.accessToken = token;
 
     // Calculate zoom level based on buffer radius
     const getZoomLevel = (radiusKm: number) => {
@@ -103,7 +118,7 @@ export const SuitabilityMap: React.FC<SuitabilityMapProps> = ({ result, region }
     };
 
     map.current = new mapboxgl.Map({
-      container: mapContainer.current,
+      container: mapContainer.current!,
       style: 'mapbox://styles/mapbox/satellite-streets-v12',
       center: region.data.center,
       zoom: getZoomLevel(region.data.radius),
@@ -200,7 +215,7 @@ export const SuitabilityMap: React.FC<SuitabilityMapProps> = ({ result, region }
     return () => {
       map.current?.remove();
     };
-  }, [result, region]);
+  }, [result, region, token]);
 
   return (
     <Card>
@@ -218,10 +233,18 @@ export const SuitabilityMap: React.FC<SuitabilityMapProps> = ({ result, region }
       </CardHeader>
       <CardContent>
         <div className="h-96 rounded-lg overflow-hidden border border-border">
-          <div 
-            ref={mapContainer} 
-            className="w-full h-full"
-          />
+          {token ? (
+            <div 
+              ref={mapContainer} 
+              className="w-full h-full"
+            />
+          ) : (
+            <MapboxTokenGate 
+              onTokenSaved={(t) => setToken(t)}
+              title="Mapbox Token Required"
+              description="Enter your Mapbox public token to render the interactive map. Or use the Demo Preview."
+            />
+          )}
         </div>
         
         <div className="mt-4 grid grid-cols-3 gap-4">
