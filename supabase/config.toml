@@ -30,6 +30,9 @@ verify_jwt = true
 [functions.stripe-webhook]
 verify_jwt = false
 
+[functions.generate-pdf-report]
+verify_jwt = false
+
 [functions.suitability-analysis]
 verify_jwt = false
 

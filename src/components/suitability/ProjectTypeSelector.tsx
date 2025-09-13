@@ -1,12 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Slider } from '@/components/ui/slider';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { 
   Sun, 
   Sprout, 
   Zap,
   MapPin,
-  TrendingUp
+  TrendingUp,
+  Settings,
+  RotateCcw
 } from 'lucide-react';
 
 interface ProjectConfig {
@@ -73,11 +78,136 @@ const projectTypes = [
 ];
 
 export const ProjectTypeSelector: React.FC<ProjectTypeProps> = ({ onSelect }) => {
-  const handleProjectSelect = (project: typeof projectTypes[0]) => {
+  const [customWeights, setCustomWeights] = useState<Record<string, Record<string, number>>>({});
+  const [selectedProjectForCustomization, setSelectedProjectForCustomization] = useState<string | null>(null);
+
+  const handleProjectSelect = (project: typeof projectTypes[0], useCustomWeights = false) => {
+    const weights = useCustomWeights && customWeights[project.id] 
+      ? customWeights[project.id] 
+      : project.weights;
+      
     onSelect({
       type: project.title,
-      weights: project.weights
+      weights: weights
     });
+  };
+
+  const handleWeightChange = (projectId: string, criterion: string, value: number[]) => {
+    setCustomWeights(prev => ({
+      ...prev,
+      [projectId]: {
+        ...prev[projectId],
+        [criterion]: value[0] / 100
+      }
+    }));
+  };
+
+  const resetWeights = (projectId: string) => {
+    setCustomWeights(prev => {
+      const updated = { ...prev };
+      delete updated[projectId];
+      return updated;
+    });
+  };
+
+  const getCurrentWeights = (projectId: string) => {
+    const project = projectTypes.find(p => p.id === projectId);
+    return customWeights[projectId] || project?.weights || {};
+  };
+
+  const normalizeWeights = (projectId: string) => {
+    const currentWeights = getCurrentWeights(projectId);
+    const total = Object.values(currentWeights).reduce((sum, weight) => sum + weight, 0);
+    
+    if (total === 0) return currentWeights;
+    
+    const normalized = Object.fromEntries(
+      Object.entries(currentWeights).map(([key, weight]) => [key, weight / total])
+    );
+    
+    setCustomWeights(prev => ({
+      ...prev,
+      [projectId]: normalized
+    }));
+  };
+
+  const CustomWeightsDialog = ({ project }: { project: typeof projectTypes[0] }) => {
+    const currentWeights = getCurrentWeights(project.id);
+    const hasCustomWeights = Boolean(customWeights[project.id]);
+    
+    return (
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="mt-2"
+            onClick={() => setSelectedProjectForCustomization(project.id)}
+          >
+            <Settings className="w-4 h-4 mr-2" />
+            Customize Weights
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Customize {project.title} Weights</DialogTitle>
+            <DialogDescription>
+              Adjust the importance of each factor for your specific needs. Weights will be automatically normalized.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {Object.entries(currentWeights).map(([criterion, weight]) => (
+              <div key={criterion} className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium capitalize">
+                    {criterion.replace(/_/g, ' ')}
+                  </label>
+                  <span className="text-sm text-muted-foreground">
+                    {Math.round(weight * 100)}%
+                  </span>
+                </div>
+                <Slider
+                  value={[weight * 100]}
+                  onValueChange={(value) => handleWeightChange(project.id, criterion, value)}
+                  max={100}
+                  min={0}
+                  step={5}
+                  className="w-full"
+                />
+              </div>
+            ))}
+            
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => normalizeWeights(project.id)}
+                className="flex-1"
+              >
+                Normalize (100%)
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => resetWeights(project.id)}
+                className="flex-1"
+              >
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Reset
+              </Button>
+            </div>
+            
+            <Button
+              onClick={() => handleProjectSelect(project, true)}
+              className="w-full bg-forest-primary hover:bg-forest-primary/90"
+            >
+              Use Custom Weights
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
   };
 
   return (
@@ -135,9 +265,27 @@ export const ProjectTypeSelector: React.FC<ProjectTypeProps> = ({ onSelect }) =>
                 </div>
                 
                 <div className="pt-3 border-t border-border">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
                     <MapPin className="w-3 h-3" />
                     Weighted overlay analysis with satellite data
+                  </div>
+                  
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      onClick={() => handleProjectSelect(project, false)}
+                      className="w-full bg-forest-primary hover:bg-forest-primary/90"
+                      size="sm"
+                    >
+                      Use Default Settings
+                    </Button>
+                    
+                    <CustomWeightsDialog project={project} />
+                    
+                    {customWeights[project.id] && (
+                      <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700 border-blue-200 justify-center">
+                        Custom weights configured
+                      </Badge>
+                    )}
                   </div>
                 </div>
               </div>

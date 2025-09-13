@@ -227,17 +227,17 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
             </Badge>
           </Button>
           
-          <Button
-            variant="outline"
-            className="w-full justify-start"
-            onClick={() => onDownload('pdf')}
-          >
-            <FileText className="w-4 h-4 mr-2" />
-            Download PDF Report
-            <Badge variant="secondary" className="ml-auto text-xs">
-              Summary
-            </Badge>
-          </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onDownload('pdf')}
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Download PDF Report
+                  <Badge variant="secondary" className="ml-auto text-xs">
+                    Investor-Ready
+                  </Badge>
+                </Button>
         </CardContent>
       </Card>
     </div>

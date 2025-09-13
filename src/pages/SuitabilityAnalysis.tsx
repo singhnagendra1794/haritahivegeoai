@@ -104,20 +104,53 @@ const SuitabilityAnalysis = () => {
     if (!analysisResult) return;
 
     try {
-      const response = await fetch(`https://letyizogbpeyclzvsagt.supabase.co/functions/v1/download-results/${analysisResult.projectId}?format=${format}`, {
-        headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxldHlpem9nYnBleWNsenZzYWd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc2ODI4ODcsImV4cCI6MjA3MzI1ODg4N30.ONtaKjzbr-HkqnU8w4G13g_V77e14sfzTwaAnHjsX-U'}`
-        }
-      });
-      if (!response.ok) throw new Error('Download failed');
+      if (format === 'pdf') {
+        // Generate comprehensive PDF report
+        const response = await fetch('https://letyizogbpeyclzvsagt.supabase.co/functions/v1/generate-pdf-report', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxldHlpem9nYnBleWNsenZzYWd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc2ODI4ODcsImV4cCI6MjA3MzI1ODg4N30.ONtaKjzbr-HkqnU8w4G13g_V77e14sfzTwaAnHjsX-U'}`
+          },
+          body: JSON.stringify({
+            result: analysisResult,
+            projectType: projectConfig!.type,
+            region: selectedRegion,
+            weights: projectConfig!.weights
+          })
+        });
+        
+        if (!response.ok) throw new Error('PDF generation failed');
 
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `suitability_analysis.${format}`;
-      a.click();
-      window.URL.revokeObjectURL(url);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${projectConfig!.type.replace(/\s+/g, '_')}_Feasibility_Report_${new Date().toISOString().split('T')[0]}.html`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        
+        toast({
+          title: "PDF Report Generated! 📄",
+          description: "Professional feasibility report with AI recommendations ready for investors",
+        });
+      } else {
+        // Original download logic for GeoTIFF and PNG
+        const response = await fetch(`https://letyizogbpeyclzvsagt.supabase.co/functions/v1/download-results/${analysisResult.projectId}?format=${format}`, {
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxldHlpem9nYnBleWNsenZzYWd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc2ODI4ODcsImV4cCI6MjA3MzI1ODg4N30.ONtaKjzbr-HkqnU8w4G13g_V77e14sfzTwaAnHjsX-U'}`
+          }
+        });
+        if (!response.ok) throw new Error('Download failed');
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `suitability_analysis.${format}`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      }
     } catch (error) {
       toast({
         title: "Download Failed",
@@ -268,16 +301,18 @@ const SuitabilityAnalysis = () => {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground">Analysis Criteria</label>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Analysis Criteria</span>
+                      <span className="font-medium">{Object.keys(projectConfig.weights).length} factors</span>
+                    </div>
                     {Object.entries(projectConfig.weights).map(([criterion, weight]) => (
-                      <Badge key={criterion} variant="outline" className="text-xs">
-                        {criterion}: {(weight * 100).toFixed(0)}%
-                      </Badge>
+                      <div key={criterion} className="flex items-center justify-between text-xs">
+                        <span className="capitalize">{criterion.replace(/_/g, ' ')}</span>
+                        <span className="font-medium">{(weight * 100).toFixed(0)}%</span>
+                      </div>
                     ))}
                   </div>
-                </div>
 
                 <Button 
                   onClick={runAnalysis} 
