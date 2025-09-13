@@ -147,23 +147,23 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
                   ? 'bg-green-50 border-green-200 shadow-sm' 
                   : 'bg-muted/30 border-border'
               }`}>
-                <div className="flex items-center gap-3">
-                  <div className={`flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold ${
-                    rank === 1 
-                      ? 'bg-yellow-500 text-white' 
-                      : rank === 2 
-                        ? 'bg-gray-500 text-white'
-                        : rank === 3
-                          ? 'bg-orange-600 text-white'
-                          : 'bg-forest-primary text-white'
-                  }`}>
-                    #{rank}
-                  </div>
-                  <div>
-                    <p className="font-semibold text-sm">
-                      {rank === 1 ? '🥇 ' : rank === 2 ? '🥈 ' : rank === 3 ? '🥉 ' : ''}
-                      Site #{rank}
-                    </p>
+            <div className="flex items-center gap-3">
+              <div className={`flex items-center justify-center w-12 h-12 rounded-full text-sm font-bold shadow-lg ${
+                rank === 1 
+                  ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-white' 
+                  : rank === 2 
+                    ? 'bg-gradient-to-br from-gray-300 to-gray-500 text-white'
+                    : rank === 3
+                      ? 'bg-gradient-to-br from-orange-400 to-orange-600 text-white'
+                      : 'bg-gradient-to-br from-forest-primary to-forest-primary/80 text-white'
+              }`}>
+                {rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`}
+              </div>
+              <div>
+                <p className="font-semibold text-sm">
+                  Site #{rank}
+                  {rank <= 3 && <span className="ml-2 text-xs text-muted-foreground">Top Performer</span>}
+                </p>
                     <p className="text-xs text-muted-foreground">
                       {site.area.toFixed(1)} hectares • {getScoreLabel(site.score)} suitability
                     </p>

@@ -29,10 +29,10 @@ interface SuitabilityResult {
   breakdown: Record<string, number>;
 }
 
-// Realistic project configurations for GeoAI analysis
+// Realistic project configurations for GeoAI analysis with exact user specifications
 const projectConfigurations = {
   'Solar Farm': {
-    datasets: ['srtm_dem', 'solar_radiation', 'esa_worldcover', 'osm_infrastructure'],
+    datasets: ['srtm_dem', 'solar_radiation', 'osm_grid', 'osm_roads'],
     weights: { solar_radiation: 0.40, slope: 0.25, grid_distance: 0.20, road_access: 0.15 },
     optimalRanges: {
       solar_radiation: { min: 4.5, max: 7.0, unit: 'kWh/m²/day' },

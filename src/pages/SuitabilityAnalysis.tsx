@@ -190,9 +190,9 @@ const SuitabilityAnalysis = () => {
       <div className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-center space-x-8 mb-8">
           {[
-            { key: 'project-type', label: 'Project Type', icon: BarChart3 },
-            { key: 'region', label: 'Select Region', icon: MapPin },
-            { key: 'analysis', label: 'Run Analysis', icon: BarChart3 },
+            { key: 'project-type', label: '1. Project Type', icon: BarChart3 },
+            { key: 'region', label: '2. Select Region', icon: MapPin },
+            { key: 'analysis', label: '3. Run Analysis', icon: BarChart3 },
             { key: 'results', label: 'Results', icon: BarChart3 }
           ].map((step, index) => {
             const isActive = currentStep === step.key;
@@ -239,8 +239,10 @@ const SuitabilityAnalysis = () => {
               <CardHeader className="text-center">
                 <CardTitle>Ready to Analyze</CardTitle>
               <CardDescription>
-                We'll analyze your selected region using satellite data, DEM, climate data, and infrastructure maps 
-                to identify the most suitable sites for {projectConfig.type.toLowerCase()}.
+                Our GeoAI engine will analyze your region using multiple datasets: DEM (slope), land cover (ESA WorldCover), 
+                infrastructure (OpenStreetMap), {projectConfig.type === 'Solar Farm' ? 'solar radiation, and grid connectivity' : 
+                projectConfig.type === 'Battery Energy Storage (BESS)' ? 'grid connectivity, and suitable land use' : 
+                'soil fertility (FAO SoilGrids), and rainfall (WorldClim)'} to identify the top 5 most suitable sites.
               </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
