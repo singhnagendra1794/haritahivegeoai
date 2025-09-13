@@ -234,18 +234,18 @@ serve(async (req) => {
     }
 
   console.log('Received analysis request:', {
-    projectType: request.projectType,
-    regionType: request.region.type,
-    regionName: request.region.name,
-    bufferRadius: request.region.data.radius,
-    centerCoordinates: request.region.data.center,
-    weights: request.weights
+    projectType: analysisRequest.projectType,
+    regionType: analysisRequest.region.type,
+    regionName: analysisRequest.region.name,
+    bufferRadius: analysisRequest.region.data.radius,
+    centerCoordinates: analysisRequest.region.data.center,
+    weights: analysisRequest.weights
   });
 
   // Debug: Check if project type exists in configurations
   console.log('Available project configurations:', Object.keys(projectConfigurations));
-  console.log('Looking for project type:', `"${request.projectType}"`);
-  console.log('Project type found:', request.projectType in projectConfigurations);
+  console.log('Looking for project type:', `"${analysisRequest.projectType}"`);
+  console.log('Project type found:', analysisRequest.projectType in projectConfigurations);
 
     // Perform the suitability analysis
     const result = await performSuitabilityAnalysis(analysisRequest);
