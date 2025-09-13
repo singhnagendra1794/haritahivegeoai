@@ -4,14 +4,9 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Sun, 
   Sprout, 
-  ShoppingCart, 
-  Home, 
-  GraduationCap,
   Zap,
-  Wheat,
-  Building,
   MapPin,
-  Stethoscope
+  TrendingUp
 } from 'lucide-react';
 
 interface ProjectConfig {
@@ -25,78 +20,54 @@ interface ProjectTypeProps {
 
 const projectTypes = [
   {
-    id: 'solar-farm',
+    id: 'solar',
     title: 'Solar Farm',
-    description: 'Optimal locations for solar energy installations',
+    description: 'Optimal locations for photovoltaic solar installations',
     icon: Sun,
     color: 'text-yellow-600',
     bgColor: 'bg-yellow-50',
-    criteria: ['Solar Radiation', 'Slope', 'Grid Distance', 'Land Use'],
+    borderColor: 'border-yellow-200',
+    criteria: ['Solar Radiation', 'Slope (DEM)', 'Grid Distance', 'Road Access'],
+    details: 'Analyzes solar irradiance, terrain slope, and infrastructure proximity using satellite data and OpenStreetMap',
     weights: {
-      'solar_radiation': 0.35,
+      'solar_radiation': 0.40,
       'slope': 0.25,
       'grid_distance': 0.20,
-      'land_use': 0.20
+      'road_access': 0.15
+    }
+  },
+  {
+    id: 'bess',
+    title: 'Battery Energy Storage (BESS)',
+    description: 'Strategic locations for energy storage systems',
+    icon: Zap,
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-50',
+    borderColor: 'border-blue-200',
+    criteria: ['Grid Proximity', 'Road Access', 'Slope (DEM)', 'Land Use'],
+    details: 'Focuses on electrical grid connectivity, transportation access, and suitable terrain for large-scale batteries',
+    weights: {
+      'grid_distance': 0.35,
+      'road_access': 0.30,
+      'slope': 0.20,
+      'land_use': 0.15
     }
   },
   {
     id: 'agriculture',
-    title: 'Agriculture Crop',
-    description: 'Best areas for crop cultivation and farming',
+    title: 'Agriculture',
+    description: 'Prime areas for crop cultivation and farming',
     icon: Sprout,
     color: 'text-green-600',
     bgColor: 'bg-green-50',
-    criteria: ['Soil Quality', 'Rainfall', 'Temperature', 'Slope'],
+    borderColor: 'border-green-200',
+    criteria: ['Soil Fertility', 'Rainfall', 'Land Cover', 'Slope'],
+    details: 'Uses FAO SoilGrids, WorldClim data, and ESA WorldCover to identify optimal growing conditions',
     weights: {
-      'soil_quality': 0.30,
-      'rainfall': 0.25,
-      'temperature': 0.25,
-      'slope': 0.20
-    }
-  },
-  {
-    id: 'retail-store',
-    title: 'Retail Store',
-    description: 'High-traffic locations for retail businesses',
-    icon: ShoppingCart,
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-50',
-    criteria: ['Population Density', 'Road Access', 'Competition', 'Income Level'],
-    weights: {
-      'population_density': 0.30,
-      'road_access': 0.25,
-      'competition': 0.25,
-      'income_level': 0.20
-    }
-  },
-  {
-    id: 'housing',
-    title: 'Housing Development',
-    description: 'Suitable areas for residential development',
-    icon: Home,
-    color: 'text-purple-600',
-    bgColor: 'bg-purple-50',
-    criteria: ['Slope', 'Flood Risk', 'Infrastructure', 'Zoning'],
-    weights: {
-      'slope': 0.30,
-      'flood_risk': 0.25,
-      'infrastructure': 0.25,
-      'zoning': 0.20
-    }
-  },
-  {
-    id: 'school-hospital',
-    title: 'School/Hospital',
-    description: 'Accessible locations for public services',
-    icon: GraduationCap,
-    color: 'text-red-600',
-    bgColor: 'bg-red-50',
-    criteria: ['Population Access', 'Road Network', 'Land Availability', 'Safety'],
-    weights: {
-      'population_access': 0.35,
-      'road_network': 0.25,
-      'land_availability': 0.20,
-      'safety': 0.20
+      'soil_fertility': 0.35,
+      'rainfall': 0.30,
+      'land_cover': 0.20,
+      'slope': 0.15
     }
   }
 ];
@@ -121,48 +92,52 @@ export const ProjectTypeSelector: React.FC<ProjectTypeProps> = ({ onSelect }) =>
         </p>
       </div>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
         {projectTypes.map((project) => (
           <Card 
             key={project.id}
-            className="cursor-pointer hover:shadow-lg transition-all duration-300 group border-2 hover:border-forest-primary/50"
+            className={`cursor-pointer hover:shadow-lg transition-all duration-300 group border-2 hover:border-forest-primary/50 ${project.borderColor}`}
             onClick={() => handleProjectSelect(project)}
           >
             <CardHeader>
               <div className="flex items-center justify-between mb-4">
-                <div className={`p-3 rounded-lg ${project.bgColor} group-hover:scale-110 transition-transform`}>
-                  <project.icon className={`w-6 h-6 ${project.color}`} />
+                <div className={`p-4 rounded-xl ${project.bgColor} group-hover:scale-110 transition-transform`}>
+                  <project.icon className={`w-8 h-8 ${project.color}`} />
                 </div>
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="secondary" className="text-xs bg-forest-primary/10 text-forest-primary border-forest-primary/20">
                   GeoAI
                 </Badge>
               </div>
-              <CardTitle className="text-lg group-hover:text-forest-primary transition-colors">
+              <CardTitle className="text-xl group-hover:text-forest-primary transition-colors mb-2">
                 {project.title}
               </CardTitle>
-              <CardDescription className="text-sm">
+              <CardDescription className="text-sm mb-3">
                 {project.description}
               </CardDescription>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {project.details}
+              </p>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-2">
-                    Analysis Criteria:
+                  <h4 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                    <TrendingUp className="w-3 h-3" />
+                    Analysis Factors:
                   </h4>
-                  <div className="flex flex-wrap gap-1">
+                  <div className="grid grid-cols-2 gap-2">
                     {project.criteria.map((criterion) => (
-                      <Badge key={criterion} variant="outline" className="text-xs">
+                      <Badge key={criterion} variant="outline" className="text-xs justify-center py-1">
                         {criterion}
                       </Badge>
                     ))}
                   </div>
                 </div>
                 
-                <div className="pt-2 border-t border-border">
+                <div className="pt-3 border-t border-border">
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <MapPin className="w-3 h-3" />
-                    Multi-criteria analysis with AI optimization
+                    Weighted overlay analysis with satellite data
                   </div>
                 </div>
               </div>
@@ -171,16 +146,27 @@ export const ProjectTypeSelector: React.FC<ProjectTypeProps> = ({ onSelect }) =>
         ))}
       </div>
 
-      <div className="bg-muted/50 rounded-lg p-6 text-center">
-        <h3 className="font-semibold text-charcoal-primary mb-2">
-          Custom Project Type
-        </h3>
-        <p className="text-sm text-muted-foreground mb-4">
-          Need a different type of analysis? Contact us for custom project configurations.
-        </p>
-        <Badge variant="outline" className="text-xs">
-          Coming Soon
-        </Badge>
+      <div className="bg-gradient-to-r from-muted/30 to-muted/50 rounded-xl p-8 text-center mt-8">
+        <div className="max-w-md mx-auto">
+          <h3 className="font-semibold text-charcoal-primary mb-3 text-lg">
+            Need a Custom Analysis?
+          </h3>
+          <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+            Our GeoAI platform can be configured for additional project types including wind energy, 
+            urban development, mining, and infrastructure planning.
+          </p>
+          <div className="flex justify-center gap-2">
+            <Badge variant="outline" className="text-xs">
+              Custom Weights
+            </Badge>
+            <Badge variant="outline" className="text-xs">
+              Additional Datasets  
+            </Badge>
+            <Badge variant="outline" className="text-xs">
+              Enterprise Solutions
+            </Badge>
+          </div>
+        </div>
       </div>
     </div>
   );

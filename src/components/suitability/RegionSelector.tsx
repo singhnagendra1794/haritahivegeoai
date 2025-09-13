@@ -189,12 +189,12 @@ export const RegionSelector: React.FC<RegionSelectorProps> = ({ onSelect, projec
                     Select District
                   </label>
                   <Select value={selectedDistrict} onValueChange={handleDistrictSelect}>
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-background">
                       <SelectValue placeholder="Choose a district..." />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-background z-50 border border-border shadow-lg">
                       {sampleDistricts.map((district) => (
-                        <SelectItem key={district.id} value={district.id}>
+                        <SelectItem key={district.id} value={district.id} className="focus:bg-muted">
                           {district.name}, {district.state}
                         </SelectItem>
                       ))}

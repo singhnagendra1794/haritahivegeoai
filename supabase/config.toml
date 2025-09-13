@@ -1,1 +1,37 @@
 project_id = "letyizogbpeyclzvsagt"
+
+[functions.ingest-vector]
+verify_jwt = false
+
+[functions.start-job]
+verify_jwt = false
+
+[functions.job-status]
+verify_jwt = false
+
+[functions.hotspot-detection]
+verify_jwt = false
+
+[functions.process-buffer]
+verify_jwt = false
+
+[functions.model-inference]
+verify_jwt = false
+
+[functions.download-report]
+verify_jwt = false
+
+[functions.create-checkout-session]
+verify_jwt = true
+
+[functions.create-portal-session]
+verify_jwt = true
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.suitability-analysis]
+verify_jwt = false
+
+[functions.download-results]
+verify_jwt = false

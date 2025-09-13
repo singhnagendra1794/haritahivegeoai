@@ -126,41 +126,68 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
         </CardContent>
       </Card>
 
-      {/* Top Sites */}
+      {/* Top 5 Sites */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MapPin className="w-5 h-5 text-forest-primary" />
-            Top Recommended Sites
+            Top 5 Recommended Sites
           </CardTitle>
           <CardDescription>
-            Best locations ranked by suitability score
+            Best locations ranked by {projectType.toLowerCase()} suitability score
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          {result.topSites.slice(0, 5).map((site, index) => (
-            <div key={site.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-8 h-8 bg-forest-primary text-white rounded-full text-sm font-bold">
-                  {index + 1}
+          {result.topSites.slice(0, 5).map((site, index) => {
+            const rank = index + 1;
+            const isTopSite = rank <= 3;
+            return (
+              <div key={site.id} className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all ${
+                isTopSite 
+                  ? 'bg-green-50 border-green-200 shadow-sm' 
+                  : 'bg-muted/30 border-border'
+              }`}>
+                <div className="flex items-center gap-3">
+                  <div className={`flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold ${
+                    rank === 1 
+                      ? 'bg-yellow-500 text-white' 
+                      : rank === 2 
+                        ? 'bg-gray-500 text-white'
+                        : rank === 3
+                          ? 'bg-orange-600 text-white'
+                          : 'bg-forest-primary text-white'
+                  }`}>
+                    #{rank}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm">
+                      {rank === 1 ? '🥇 ' : rank === 2 ? '🥈 ' : rank === 3 ? '🥉 ' : ''}
+                      Site #{rank}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {site.area.toFixed(1)} hectares • {getScoreLabel(site.score)} suitability
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-medium text-sm">Site #{index + 1}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {site.area.toFixed(1)} hectares
-                  </p>
+                <div className="text-right">
+                  <div className={`text-2xl font-bold ${getScoreColor(site.score)} mb-1`}>
+                    {(site.score * 100).toFixed(0)}%
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {site.coordinates[1].toFixed(4)}°N, {site.coordinates[0].toFixed(4)}°E
+                  </div>
                 </div>
               </div>
-              <div className="text-right">
-                <div className={`font-bold ${getScoreColor(site.score)}`}>
-                  {(site.score * 100).toFixed(0)}%
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {site.coordinates[1].toFixed(3)}, {site.coordinates[0].toFixed(3)}
-                </div>
-              </div>
+            );
+          })}
+          
+          {result.topSites.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              <MapPin className="w-12 h-12 mx-auto mb-3 opacity-50" />
+              <p>No suitable sites found in the selected region</p>
+              <p className="text-xs mt-1">Try adjusting the region or project parameters</p>
             </div>
-          ))}
+          )}
         </CardContent>
       </Card>
 

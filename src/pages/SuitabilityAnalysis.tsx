@@ -222,9 +222,10 @@ const SuitabilityAnalysis = () => {
             <Card className="max-w-2xl mx-auto">
               <CardHeader className="text-center">
                 <CardTitle>Ready to Analyze</CardTitle>
-                <CardDescription>
-                  We'll analyze your selected region for {projectConfig.type} suitability using advanced GeoAI models
-                </CardDescription>
+              <CardDescription>
+                We'll analyze your selected region using satellite data, DEM, climate data, and infrastructure maps 
+                to identify the most suitable sites for {projectConfig.type.toLowerCase()}.
+              </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
@@ -256,10 +257,20 @@ const SuitabilityAnalysis = () => {
                 <Button 
                   onClick={runAnalysis} 
                   disabled={isAnalyzing}
-                  className="w-full"
+                  className="w-full bg-forest-primary hover:bg-forest-primary/90"
                   size="lg"
                 >
-                  {isAnalyzing ? 'Analyzing...' : 'Run Suitability Analysis'}
+                  {isAnalyzing ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Running GeoAI Analysis...
+                    </>
+                  ) : (
+                    <>
+                      <BarChart3 className="w-4 h-4 mr-2" />
+                      Run Suitability Analysis
+                    </>
+                  )}
                 </Button>
               </CardContent>
             </Card>

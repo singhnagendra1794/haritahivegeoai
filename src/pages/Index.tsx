@@ -16,29 +16,30 @@ import {
   Map as MapIcon,
   Zap,
   Users,
-  Globe
+  Globe,
+  Sun
 } from 'lucide-react';
 import logoImage from '@/assets/logo.jpg';
 
 const Index = () => {
   const workflows = [
     {
+      icon: Sun,
+      title: "Solar Farm Analysis",
+      description: "Optimal site selection using solar radiation, slope, and grid connectivity data",
+      badge: "Renewable Energy"
+    },
+    {
+      icon: Zap,
+      title: "Battery Storage (BESS)",
+      description: "Strategic locations for energy storage with grid proximity and terrain analysis",
+      badge: "Energy Storage"
+    },
+    {
       icon: Sprout,
-      title: "Crop Health Analysis",
-      description: "NDVI/NDWI monitoring with ML-powered yield predictions",
+      title: "Agriculture Suitability",
+      description: "Crop-optimal areas using soil, climate, and land cover analysis",
       badge: "Agriculture"
-    },
-    {
-      icon: AlertTriangle,
-      title: "Disaster Response",
-      description: "Real-time flood simulation and emergency planning",
-      badge: "Emergency"
-    },
-    {
-      icon: Building2,
-      title: "Urban Planning",
-      description: "Smart city development with population analytics",
-      badge: "Planning"
     }
   ];
 
@@ -93,15 +94,15 @@ const Index = () => {
           </Badge>
           
           <h1 className="text-5xl md:text-6xl font-bold text-charcoal-primary mb-6 leading-tight">
-            GeoAI Platform
+            Site Suitability Analysis
             <br />
-            <span className="text-forest-primary">Intelligent Mapping & Analytics</span>
+            <span className="text-forest-primary">Solar • BESS • Agriculture</span>
           </h1>
           
           <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
-            Transform spatial data into actionable insights with advanced AI models, 
-            real-time processing, and sector-specific tools for agriculture, urban planning, 
-            disaster management, and defense applications.
+            AI-powered site selection for renewable energy and agriculture projects. 
+            Analyze terrain, climate, infrastructure, and soil data to identify 
+            optimal locations in under 3 minutes.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
@@ -167,10 +168,10 @@ const Index = () => {
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-charcoal-primary mb-4">
-              Sector-Specific Workflows
+              Specialized Analysis Tools
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Purpose-built tools for agriculture, disaster management, urban planning, and more
+              GeoAI-powered suitability analysis for renewable energy and agriculture projects
             </p>
           </div>
           
@@ -198,9 +199,9 @@ const Index = () => {
           </div>
           
           <div className="text-center mt-12">
-            <Link to="/app">
+            <Link to="/suitability">
               <Button size="lg" variant="outline" className="group">
-                Explore All Tools
+                Try Site Analysis
                 <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
