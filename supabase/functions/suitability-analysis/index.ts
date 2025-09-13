@@ -79,7 +79,9 @@ async function performSuitabilityAnalysis(request: AnalysisRequest): Promise<Sui
   // Get project configuration
   const config = projectConfigurations[request.projectType as keyof typeof projectConfigurations];
   if (!config) {
-    throw new Error(`Unsupported project type: ${request.projectType}`);
+    console.error(`Project type "${request.projectType}" not found in configurations`);
+    console.error('Available configurations:', Object.keys(projectConfigurations));
+    throw new Error(`Unsupported project type: ${request.projectType}. Available types: ${Object.keys(projectConfigurations).join(', ')}`);
   }
   
   console.log('Using datasets:', config.datasets);
@@ -231,13 +233,19 @@ serve(async (req) => {
       throw new Error('Invalid request: missing projectType or region');
     }
 
-    console.log('Received analysis request:', {
-      projectType: analysisRequest.projectType,
-      regionType: analysisRequest.region.type,
-      regionName: analysisRequest.region.name,
-      bufferRadius: analysisRequest.region.data.radius,
-      centerCoordinates: analysisRequest.region.data.center
-    });
+  console.log('Received analysis request:', {
+    projectType: request.projectType,
+    regionType: request.region.type,
+    regionName: request.region.name,
+    bufferRadius: request.region.data.radius,
+    centerCoordinates: request.region.data.center,
+    weights: request.weights
+  });
+
+  // Debug: Check if project type exists in configurations
+  console.log('Available project configurations:', Object.keys(projectConfigurations));
+  console.log('Looking for project type:', `"${request.projectType}"`);
+  console.log('Project type found:', request.projectType in projectConfigurations);
 
     // Perform the suitability analysis
     const result = await performSuitabilityAnalysis(analysisRequest);
