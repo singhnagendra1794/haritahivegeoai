@@ -9,6 +9,7 @@ import { FactorSelector } from '@/components/suitability/FactorSelector';
 import { SuitabilityMap } from '@/components/suitability/SuitabilityMap';
 import { ResultsPanel } from '@/components/suitability/ResultsPanel';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import logoImage from '@/assets/logo.jpg';
 
 type AnalysisStep = 'project-type' | 'region-factors' | 'analysis' | 'results';
@@ -75,24 +76,17 @@ const SuitabilityAnalysis = () => {
       // Generate a temporary session ID for this analysis
       const sessionId = crypto.randomUUID();
       
-      const response = await fetch('https://letyizogbpeyclzvsagt.supabase.co/functions/v1/suitability-analysis', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxldHlpem9nYnBleWNsenZzYWd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc2ODI4ODcsImV4cCI6MjA3MzI1ODg4N30.ONtaKjzbr-HkqnU8w4G13g_V77e14sfzTwaAnHjsX-U`
-        },
-        body: JSON.stringify({
+      const { data: result, error } = await supabase.functions.invoke('suitability-analysis', {
+        body: {
           projectType: analysisConfig.projectType,
           weights: analysisConfig.factors.weights,
           selectedFactors: analysisConfig.factors.selectedFactors,
           region: analysisConfig.region,
           sessionId: sessionId,
-        }),
+        }
       });
 
-      if (!response.ok) throw new Error('Analysis failed');
-
-      const result = await response.json();
+      if (error) throw error;
       setAnalysisResult(result);
       setCurrentStep('results');
       
@@ -117,23 +111,18 @@ const SuitabilityAnalysis = () => {
     try {
       if (format === 'pdf') {
         // Generate comprehensive PDF report
-        const response = await fetch('https://letyizogbpeyclzvsagt.supabase.co/functions/v1/generate-pdf-report', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxldHlpem9nYnBleWNsenZzYWd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc2ODI4ODcsImV4cCI6MjA3MzI1ODg4N30.ONtaKjzbr-HkqnU8w4G13g_V77e14sfzTwaAnHjsX-U`
-          },
-          body: JSON.stringify({
+        const { data, error } = await supabase.functions.invoke('generate-pdf-report', {
+          body: {
             result: analysisResult,
             projectType: analysisConfig.projectType!,
             region: analysisConfig.region,
             weights: analysisConfig.factors!.weights
-          })
+          }
         });
         
-        if (!response.ok) throw new Error('PDF generation failed');
+        if (error) throw error;
 
-        const blob = await response.blob();
+        const blob = new Blob([data], { type: 'text/html' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -147,14 +136,16 @@ const SuitabilityAnalysis = () => {
         });
       } else {
         // Original download logic for GeoTIFF and PNG
-        const response = await fetch(`https://letyizogbpeyclzvsagt.supabase.co/functions/v1/download-results/${analysisResult.projectId}?format=${format}`, {
-          headers: {
-            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxldHlpem9nYnBleWNsenZzYWd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc2ODI4ODcsImV4cCI6MjA3MzI1ODg4N30.ONtaKjzbr-HkqnU8w4G13g_V77e14sfzTwaAnHjsX-U`
+        const { data, error } = await supabase.functions.invoke('download-results', {
+          body: {
+            projectId: analysisResult.projectId,
+            format: format
           }
         });
-        if (!response.ok) throw new Error('Download failed');
+        
+        if (error) throw error;
 
-        const blob = await response.blob();
+        const blob = new Blob([data]);
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
