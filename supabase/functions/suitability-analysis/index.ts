@@ -9,6 +9,7 @@ const corsHeaders = {
 interface AnalysisRequest {
   projectType: string;
   weights: Record<string, number>;
+  selectedFactors?: string[]; // Optional custom factor selection
   region: {
     type: 'buffer';
     data: {
@@ -85,7 +86,8 @@ async function performSuitabilityAnalysis(request: AnalysisRequest): Promise<Sui
   }
   
   console.log('Using datasets:', config.datasets);
-  console.log('Applied weights:', config.weights);
+  console.log('Applied weights:', request.weights);
+  console.log('Selected factors:', request.selectedFactors || 'using defaults');
   
   // Reusable geo vars for buffer
   const [centerLng, centerLat] = request.region.data.center;
@@ -239,7 +241,8 @@ serve(async (req) => {
     regionName: analysisRequest.region.name,
     bufferRadius: analysisRequest.region.data.radius,
     centerCoordinates: analysisRequest.region.data.center,
-    weights: analysisRequest.weights
+    weights: analysisRequest.weights,
+    selectedFactors: analysisRequest.selectedFactors || 'using defaults'
   });
 
   // Debug: Check if project type exists in configurations
@@ -260,6 +263,7 @@ serve(async (req) => {
           project_type: analysisRequest.projectType,
           region: analysisRequest.region,
           weights: analysisRequest.weights,
+          selected_factors: analysisRequest.selectedFactors,
           session_id: analysisRequest.sessionId || crypto.randomUUID()
         },
         result_data: result,

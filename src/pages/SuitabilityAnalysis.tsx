@@ -2,20 +2,16 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Download, MapPin, BarChart3 } from 'lucide-react';
-import { ProjectTypeSelector } from '@/components/suitability/ProjectTypeSelector';
-import { RegionSelector } from '@/components/suitability/RegionSelector';
+import { Download, MapPin, BarChart3, Settings } from 'lucide-react';
+import { EnhancedProjectTypeSelector } from '@/components/suitability/EnhancedProjectTypeSelector';
+import { EnhancedRegionSelector } from '@/components/suitability/EnhancedRegionSelector';
+import { FactorSelector } from '@/components/suitability/FactorSelector';
 import { SuitabilityMap } from '@/components/suitability/SuitabilityMap';
 import { ResultsPanel } from '@/components/suitability/ResultsPanel';
 import { useToast } from '@/hooks/use-toast';
 import logoImage from '@/assets/logo.jpg';
 
-type AnalysisStep = 'project-type' | 'region' | 'analysis' | 'results';
-
-interface ProjectConfig {
-  type: string;
-  weights: Record<string, number>;
-}
+type AnalysisStep = 'project-type' | 'region-factors' | 'analysis' | 'results';
 
 interface Region {
   type: 'buffer';
@@ -25,6 +21,17 @@ interface Region {
     address: string;
   };
   name: string;
+}
+
+interface FactorConfig {
+  selectedFactors: string[];
+  weights: Record<string, number>;
+}
+
+interface AnalysisConfig {
+  projectType: string;
+  region: Region;
+  factors: FactorConfig;
 }
 
 interface AnalysisResult {
@@ -41,24 +48,27 @@ interface AnalysisResult {
 
 const SuitabilityAnalysis = () => {
   const [currentStep, setCurrentStep] = useState<AnalysisStep>('project-type');
-  const [projectConfig, setProjectConfig] = useState<ProjectConfig | null>(null);
-  const [selectedRegion, setSelectedRegion] = useState<Region | null>(null);
+  const [analysisConfig, setAnalysisConfig] = useState<Partial<AnalysisConfig>>({});
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { toast } = useToast();
 
-  const handleProjectTypeSelect = (config: ProjectConfig) => {
-    setProjectConfig(config);
-    setCurrentStep('region');
+  const handleProjectTypeSelect = (projectType: string) => {
+    setAnalysisConfig(prev => ({ ...prev, projectType }));
+    setCurrentStep('region-factors');
   };
 
   const handleRegionSelect = (region: Region) => {
-    setSelectedRegion(region);
+    setAnalysisConfig(prev => ({ ...prev, region }));
+  };
+
+  const handleFactorSelect = (factors: FactorConfig) => {
+    setAnalysisConfig(prev => ({ ...prev, factors }));
     setCurrentStep('analysis');
   };
 
   const runAnalysis = async () => {
-    if (!projectConfig || !selectedRegion) return;
+    if (!analysisConfig.projectType || !analysisConfig.region || !analysisConfig.factors) return;
 
     setIsAnalyzing(true);
     try {
@@ -69,13 +79,14 @@ const SuitabilityAnalysis = () => {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxldHlpem9nYnBleWNsenZzYWd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc2ODI4ODcsImV4cCI6MjA3MzI1ODg4N30.ONtaKjzbr-HkqnU8w4G13g_V77e14sfzTwaAnHjsX-U'}`
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxldHlpem9nYnBleWNsenZzYWd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc2ODI4ODcsImV4cCI6MjA3MzI1ODg4N30.ONtaKjzbr-HkqnU8w4G13g_V77e14sfzTwaAnHjsX-U`
         },
         body: JSON.stringify({
-          projectType: projectConfig.type,
-          weights: projectConfig.weights,
-          region: selectedRegion,
-          sessionId: sessionId, // Include session ID
+          projectType: analysisConfig.projectType,
+          weights: analysisConfig.factors.weights,
+          selectedFactors: analysisConfig.factors.selectedFactors,
+          region: analysisConfig.region,
+          sessionId: sessionId,
         }),
       });
 
@@ -87,7 +98,7 @@ const SuitabilityAnalysis = () => {
       
       toast({
         title: "Analysis Complete! 🎉",
-        description: `Found ${result.topSites.length} suitable sites for ${projectConfig.type.toLowerCase()}`,
+        description: `Found ${result.topSites.length} suitable sites for ${analysisConfig.projectType!.toLowerCase()}`,
       });
     } catch (error) {
       toast({
@@ -110,13 +121,13 @@ const SuitabilityAnalysis = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxldHlpem9nYnBleWNsenZzYWd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc2ODI4ODcsImV4cCI6MjA3MzI1ODg4N30.ONtaKjzbr-HkqnU8w4G13g_V77e14sfzTwaAnHjsX-U'}`
+            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxldHlpem9nYnBleWNsenZzYWd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc2ODI4ODcsImV4cCI6MjA3MzI1ODg4N30.ONtaKjzbr-HkqnU8w4G13g_V77e14sfzTwaAnHjsX-U`
           },
           body: JSON.stringify({
             result: analysisResult,
-            projectType: projectConfig!.type,
-            region: selectedRegion,
-            weights: projectConfig!.weights
+            projectType: analysisConfig.projectType!,
+            region: analysisConfig.region,
+            weights: analysisConfig.factors!.weights
           })
         });
         
@@ -126,7 +137,7 @@ const SuitabilityAnalysis = () => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${projectConfig!.type.replace(/\s+/g, '_')}_Feasibility_Report_${new Date().toISOString().split('T')[0]}.html`;
+        a.download = `${analysisConfig.projectType!.replace(/\s+/g, '_')}_Feasibility_Report_${new Date().toISOString().split('T')[0]}.html`;
         a.click();
         window.URL.revokeObjectURL(url);
         
@@ -138,7 +149,7 @@ const SuitabilityAnalysis = () => {
         // Original download logic for GeoTIFF and PNG
         const response = await fetch(`https://letyizogbpeyclzvsagt.supabase.co/functions/v1/download-results/${analysisResult.projectId}?format=${format}`, {
           headers: {
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxldHlpem9nYnBleWNsenZzYWd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc2ODI4ODcsImV4cCI6MjA3MzI1ODg4N30.ONtaKjzbr-HkqnU8w4G13g_V77e14sfzTwaAnHjsX-U'}`
+            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxldHlpem9nYnBleWNsenZzYWd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc2ODI4ODcsImV4cCI6MjA3MzI1ODg4N30.ONtaKjzbr-HkqnU8w4G13g_V77e14sfzTwaAnHjsX-U`
           }
         });
         if (!response.ok) throw new Error('Download failed');
@@ -162,8 +173,7 @@ const SuitabilityAnalysis = () => {
 
   const resetAnalysis = () => {
     setCurrentStep('project-type');
-    setProjectConfig(null);
-    setSelectedRegion(null);
+    setAnalysisConfig({});
     setAnalysisResult(null);
   };
 
@@ -228,12 +238,12 @@ const SuitabilityAnalysis = () => {
         <div className="flex items-center justify-center space-x-8 mb-8">
           {[
             { key: 'project-type', label: '1. Project Type', icon: BarChart3 },
-            { key: 'region', label: '2. Select Region', icon: MapPin },
+            { key: 'region-factors', label: '2. Location & Factors', icon: Settings },
             { key: 'analysis', label: '3. Run Analysis', icon: BarChart3 },
-            { key: 'results', label: 'Results', icon: BarChart3 }
+            { key: 'results', label: 'Results', icon: MapPin }
           ].map((step, index) => {
             const isActive = currentStep === step.key;
-            const isCompleted = ['project-type', 'region', 'analysis', 'results'].indexOf(currentStep) > index;
+            const isCompleted = ['project-type', 'region-factors', 'analysis', 'results'].indexOf(currentStep) > index;
             
             return (
               <div key={step.key} className="flex items-center">
@@ -264,55 +274,67 @@ const SuitabilityAnalysis = () => {
         {/* Step Content */}
         <div className="max-w-6xl mx-auto">
           {currentStep === 'project-type' && (
-            <ProjectTypeSelector onSelect={handleProjectTypeSelect} />
+            <EnhancedProjectTypeSelector onSelect={handleProjectTypeSelect} />
           )}
 
-          {currentStep === 'region' && projectConfig && (
-            <RegionSelector onSelect={handleRegionSelect} projectType={projectConfig.type} />
+          {currentStep === 'region-factors' && analysisConfig.projectType && (
+            <div className="space-y-8">
+              {!analysisConfig.region && (
+                <EnhancedRegionSelector 
+                  onSelect={handleRegionSelect} 
+                  projectType={analysisConfig.projectType} 
+                />
+              )}
+              {analysisConfig.region && (
+                <FactorSelector 
+                  projectType={analysisConfig.projectType}
+                  onSelect={handleFactorSelect}
+                />
+              )}
+            </div>
           )}
 
-          {currentStep === 'analysis' && projectConfig && selectedRegion && (
+          {currentStep === 'analysis' && analysisConfig.projectType && analysisConfig.region && analysisConfig.factors && (
             <Card className="max-w-2xl mx-auto">
               <CardHeader className="text-center">
                 <CardTitle>Ready to Analyze</CardTitle>
-              <CardDescription>
-                Our GeoAI engine will analyze your {selectedRegion.data.radius}km buffer area using multiple datasets: DEM (slope), land cover (ESA WorldCover), 
-                infrastructure (OpenStreetMap), {projectConfig.type === 'Solar Farm' ? 'solar radiation, and grid connectivity' : 
-                projectConfig.type === 'Battery Energy Storage (BESS)' ? 'grid connectivity, and suitable land use' : 
-                'soil fertility (FAO SoilGrids), and rainfall (WorldClim)'} to identify the top 5 most suitable sites within the buffer zone.
-              </CardDescription>
+                <CardDescription>
+                  Our GeoAI engine will analyze your {analysisConfig.region.data.radius}km buffer area using your selected 
+                  factors: {analysisConfig.factors.selectedFactors.map(f => f.replace(/_/g, ' ')).join(', ')} to identify 
+                  the top 5 most suitable sites within the buffer zone.
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Project Type</label>
                     <div className="mt-1">
-                      <Badge variant="secondary">{projectConfig.type}</Badge>
+                      <Badge variant="secondary">{analysisConfig.projectType}</Badge>
                     </div>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Analysis Area</label>
                     <div className="mt-1 space-y-1">
-                      <Badge variant="outline">{selectedRegion.data.radius}km Buffer</Badge>
+                      <Badge variant="outline">{analysisConfig.region.data.radius}km Buffer</Badge>
                       <p className="text-xs text-muted-foreground">
-                        Center: {selectedRegion.data.center[1].toFixed(4)}, {selectedRegion.data.center[0].toFixed(4)}
+                        Center: {analysisConfig.region.data.center[1].toFixed(4)}, {analysisConfig.region.data.center[0].toFixed(4)}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span>Analysis Criteria</span>
-                      <span className="font-medium">{Object.keys(projectConfig.weights).length} factors</span>
-                    </div>
-                    {Object.entries(projectConfig.weights).map(([criterion, weight]) => (
-                      <div key={criterion} className="flex items-center justify-between text-xs">
-                        <span className="capitalize">{criterion.replace(/_/g, ' ')}</span>
-                        <span className="font-medium">{(weight * 100).toFixed(0)}%</span>
-                      </div>
-                    ))}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Selected Factors</span>
+                    <span className="font-medium">{analysisConfig.factors.selectedFactors.length} factors</span>
                   </div>
+                  {Object.entries(analysisConfig.factors.weights).map(([criterion, weight]) => (
+                    <div key={criterion} className="flex items-center justify-between text-xs">
+                      <span className="capitalize">{criterion.replace(/_/g, ' ')}</span>
+                      <span className="font-medium">{(weight * 100).toFixed(0)}%</span>
+                    </div>
+                  ))}
+                </div>
 
                 <Button 
                   onClick={runAnalysis} 
@@ -336,18 +358,18 @@ const SuitabilityAnalysis = () => {
             </Card>
           )}
 
-          {currentStep === 'results' && analysisResult && (
+          {currentStep === 'results' && analysisResult && analysisConfig.region && analysisConfig.projectType && (
             <div className="grid lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
                 <SuitabilityMap 
                   result={analysisResult}
-                  region={selectedRegion!}
+                  region={analysisConfig.region}
                 />
               </div>
               <div>
                 <ResultsPanel 
                   result={analysisResult}
-                  projectType={projectConfig!.type}
+                  projectType={analysisConfig.projectType}
                   onDownload={downloadResults}
                 />
               </div>
