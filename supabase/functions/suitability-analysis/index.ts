@@ -65,6 +65,49 @@ const projectConfigurations = {
       land_cover: { min: 0.8, max: 1.0, unit: 'agricultural suitability' },
       slope: { min: 0, max: 8, unit: 'degrees' }
     }
+  },
+  'Wind Energy': {
+    datasets: ['global_wind_atlas', 'srtm_dem', 'osm_grid', 'protected_areas_wdpa'],
+    weights: { wind_speed: 0.45, slope: 0.25, grid_distance: 0.20, protected_areas: 0.10 },
+    optimalRanges: {
+      wind_speed: { min: 6.0, max: 12.0, unit: 'm/s at 100m height' },
+      slope: { min: 0, max: 15, unit: 'degrees' },
+      grid_distance: { min: 0, max: 10000, unit: 'meters' },
+      protected_areas: { min: 0.8, max: 1.0, unit: 'suitability (inverse of restriction)' }
+    }
+  },
+  'Urban Development': {
+    datasets: ['worldpop_density', 'srtm_dem', 'osm_highways', 'water_bodies_osm', 'protected_areas_wdpa'],
+    weights: { population_density: 0.30, slope: 0.25, highway_access: 0.20, water_resources: 0.15, protected_areas: 0.10 },
+    optimalRanges: {
+      population_density: { min: 100, max: 2000, unit: 'people/km²' },
+      slope: { min: 0, max: 10, unit: 'degrees' },
+      highway_access: { min: 0, max: 5000, unit: 'meters' },
+      water_resources: { min: 0, max: 2000, unit: 'meters to water source' },
+      protected_areas: { min: 0.7, max: 1.0, unit: 'development suitability' }
+    }
+  },
+  'Mining': {
+    datasets: ['geological_survey', 'srtm_dem', 'osm_roads', 'water_bodies_osm', 'protected_areas_wdpa'],
+    weights: { geology: 0.35, slope: 0.25, road_access: 0.20, water_resources: 0.12, protected_areas: 0.08 },
+    optimalRanges: {
+      geology: { min: 0.6, max: 1.0, unit: 'mineral potential index' },
+      slope: { min: 0, max: 20, unit: 'degrees' },
+      road_access: { min: 0, max: 10000, unit: 'meters' },
+      water_resources: { min: 0, max: 5000, unit: 'meters to water source' },
+      protected_areas: { min: 0.5, max: 1.0, unit: 'mining suitability' }
+    }
+  },
+  'Infrastructure Planning': {
+    datasets: ['worldpop_density', 'srtm_dem', 'osm_highways', 'geological_survey', 'protected_areas_wdpa'],
+    weights: { population_density: 0.30, slope: 0.25, highway_access: 0.20, geology: 0.15, protected_areas: 0.10 },
+    optimalRanges: {
+      population_density: { min: 50, max: 1500, unit: 'people/km²' },
+      slope: { min: 0, max: 12, unit: 'degrees' },
+      highway_access: { min: 0, max: 3000, unit: 'meters' },
+      geology: { min: 0.7, max: 1.0, unit: 'stability index' },
+      protected_areas: { min: 0.6, max: 1.0, unit: 'development suitability' }
+    }
   }
 };
 
@@ -128,6 +171,37 @@ async function performSuitabilityAnalysis(request: AnalysisRequest): Promise<Sui
                    key === 'land_cover' ? 0.7 + (Math.random() * 0.25) :
                    0.5 + (Math.random() * 0.4);
         break;
+      case 'Wind Energy':
+        baseScore = key === 'wind_speed' ? 0.75 + (Math.random() * 0.2) :
+                   key === 'slope' ? 0.6 + (Math.random() * 0.3) :
+                   key === 'grid_distance' ? 0.55 + (Math.random() * 0.35) :
+                   key === 'protected_areas' ? 0.8 + (Math.random() * 0.15) :
+                   0.5 + (Math.random() * 0.4);
+        break;
+      case 'Urban Development':
+        baseScore = key === 'population_density' ? 0.65 + (Math.random() * 0.25) :
+                   key === 'slope' ? 0.7 + (Math.random() * 0.25) :
+                   key === 'highway_access' ? 0.6 + (Math.random() * 0.3) :
+                   key === 'water_resources' ? 0.55 + (Math.random() * 0.35) :
+                   key === 'protected_areas' ? 0.75 + (Math.random() * 0.2) :
+                   0.5 + (Math.random() * 0.4);
+        break;
+      case 'Mining':
+        baseScore = key === 'geology' ? 0.7 + (Math.random() * 0.25) :
+                   key === 'slope' ? 0.6 + (Math.random() * 0.35) :
+                   key === 'road_access' ? 0.55 + (Math.random() * 0.35) :
+                   key === 'water_resources' ? 0.6 + (Math.random() * 0.3) :
+                   key === 'protected_areas' ? 0.5 + (Math.random() * 0.4) :
+                   0.45 + (Math.random() * 0.45);
+        break;
+      case 'Infrastructure Planning':
+        baseScore = key === 'population_density' ? 0.65 + (Math.random() * 0.25) :
+                   key === 'slope' ? 0.7 + (Math.random() * 0.25) :
+                   key === 'highway_access' ? 0.6 + (Math.random() * 0.3) :
+                   key === 'geology' ? 0.65 + (Math.random() * 0.3) :
+                   key === 'protected_areas' ? 0.7 + (Math.random() * 0.25) :
+                   0.5 + (Math.random() * 0.4);
+        break;
       default:
         baseScore = 0.4 + (Math.random() * 0.5);
     }
@@ -173,6 +247,18 @@ async function performSuitabilityAnalysis(request: AnalysisRequest): Promise<Sui
         break;
       case 'Agriculture':
         areaRange = [25, 200]; // 25-200 hectares
+        break;
+      case 'Wind Energy':
+        areaRange = [50, 500]; // 50-500 hectares for wind farms
+        break;
+      case 'Urban Development':
+        areaRange = [20, 150]; // 20-150 hectares for urban projects
+        break;
+      case 'Mining':
+        areaRange = [100, 1000]; // 100-1000 hectares for mining operations
+        break;
+      case 'Infrastructure Planning':
+        areaRange = [15, 75]; // 15-75 hectares for infrastructure corridors
         break;
       default:
         areaRange = [5, 50];

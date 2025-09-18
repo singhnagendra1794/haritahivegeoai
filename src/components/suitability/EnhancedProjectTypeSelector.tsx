@@ -8,7 +8,11 @@ import {
   Zap,
   MapPin,
   TrendingUp,
-  Layers
+  Layers,
+  Wind,
+  Building2,
+  Pickaxe,
+  Network
 } from 'lucide-react';
 
 interface ProjectTypeProps {
@@ -51,6 +55,54 @@ const projectTypes = [
     defaultRadius: '5 km',
     factors: ['Soil Fertility', 'Rainfall', 'Land Cover', 'DEM (Slope)'],
     details: 'Uses FAO SoilGrids, WorldClim data, and ESA WorldCover for optimal growing conditions'
+  },
+  {
+    id: 'wind',
+    title: 'Wind Energy',
+    description: 'Optimal sites for wind turbine installations',
+    icon: Wind,
+    color: 'text-cyan-600',
+    bgColor: 'bg-cyan-50',
+    borderColor: 'border-cyan-200',
+    defaultRadius: '10 km',
+    factors: ['Wind Speed', 'DEM (Slope)', 'Grid Distance', 'Protected Areas'],
+    details: 'Evaluates wind resources, terrain suitability, and environmental constraints for wind farms'
+  },
+  {
+    id: 'urban',
+    title: 'Urban Development',
+    description: 'Strategic areas for urban expansion and development',
+    icon: Building2,
+    color: 'text-indigo-600',
+    bgColor: 'bg-indigo-50',
+    borderColor: 'border-indigo-200',
+    defaultRadius: '3 km',
+    factors: ['Population Density', 'DEM (Slope)', 'Highway Access', 'Water Resources'],
+    details: 'Analyzes demographics, accessibility, terrain, and infrastructure for urban planning'
+  },
+  {
+    id: 'mining',
+    title: 'Mining',
+    description: 'Suitable locations for mining operations',
+    icon: Pickaxe,
+    color: 'text-amber-600',
+    bgColor: 'bg-amber-50',
+    borderColor: 'border-amber-200',
+    defaultRadius: '8 km',
+    factors: ['Geological Conditions', 'DEM (Slope)', 'Road Access', 'Water Resources'],
+    details: 'Evaluates geological potential, accessibility, and resource availability for mining projects'
+  },
+  {
+    id: 'infrastructure',
+    title: 'Infrastructure Planning',
+    description: 'Optimal corridors for infrastructure development',
+    icon: Network,
+    color: 'text-purple-600',
+    bgColor: 'bg-purple-50',
+    borderColor: 'border-purple-200',
+    defaultRadius: '5 km',
+    factors: ['Population Density', 'DEM (Slope)', 'Highway Access', 'Geological Conditions'],
+    details: 'Assesses demographics, terrain, connectivity, and stability for infrastructure projects'
   }
 ];
 
@@ -67,7 +119,7 @@ export const EnhancedProjectTypeSelector: React.FC<ProjectTypeProps> = ({ onSele
         </p>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-w-7xl mx-auto">
         {projectTypes.map((project) => (
           <Card 
             key={project.id}
@@ -138,21 +190,24 @@ export const EnhancedProjectTypeSelector: React.FC<ProjectTypeProps> = ({ onSele
       <div className="bg-gradient-to-r from-muted/30 to-muted/50 rounded-xl p-8 text-center mt-8">
         <div className="max-w-md mx-auto">
           <h3 className="font-semibold text-charcoal-primary mb-3 text-lg">
-            Enhanced Customization Available
+            7 Project Types Available
           </h3>
           <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-            After selecting your project type, you'll be able to customize buffer radius, 
-            select specific geospatial factors, and adjust analysis weights to match your requirements.
+            Choose from Solar, BESS, Agriculture, Wind Energy, Urban Development, Mining, or Infrastructure Planning.
+            All with fully customizable buffer radius, factor selection, and weight adjustment capabilities.
           </p>
-          <div className="flex justify-center gap-2">
+          <div className="flex justify-center gap-2 flex-wrap">
             <Badge variant="outline" className="text-xs">
               Custom Buffer Radius
             </Badge>
             <Badge variant="outline" className="text-xs">
-              Factor Selection  
+              13+ Geospatial Factors  
             </Badge>
             <Badge variant="outline" className="text-xs">
               Weight Adjustment
+            </Badge>
+            <Badge variant="outline" className="text-xs">
+              Modular & Extensible
             </Badge>
           </div>
         </div>

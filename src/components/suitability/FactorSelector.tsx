@@ -36,7 +36,7 @@ const availableFactors = {
     icon: Mountain,
     color: 'text-orange-600',
     datasets: ['srtm_dem'],
-    applicableFor: ['Solar Farm', 'Battery Energy Storage (BESS)', 'Agriculture']
+    applicableFor: ['Solar Farm', 'Battery Energy Storage (BESS)', 'Agriculture', 'Wind Energy', 'Urban Development', 'Mining', 'Infrastructure Planning']
   },
   'solar_radiation': {
     name: 'Solar Radiation',
@@ -45,6 +45,14 @@ const availableFactors = {
     color: 'text-yellow-600',
     datasets: ['solar_radiation'],
     applicableFor: ['Solar Farm']
+  },
+  'wind_speed': {
+    name: 'Wind Speed / Wind Potential',
+    description: 'Wind resource assessment from Global Wind Atlas',
+    icon: Cloud,
+    color: 'text-cyan-600',
+    datasets: ['global_wind_atlas'],
+    applicableFor: ['Wind Energy']
   },
   'soil_fertility': {
     name: 'Soil Fertility',
@@ -55,12 +63,12 @@ const availableFactors = {
     applicableFor: ['Agriculture']
   },
   'rainfall': {
-    name: 'Rainfall',
+    name: 'Rainfall / Climate Data',
     description: 'Precipitation data from WorldClim',
     icon: Cloud,
     color: 'text-blue-600',
     datasets: ['worldclim_precip'],
-    applicableFor: ['Agriculture']
+    applicableFor: ['Agriculture', 'Urban Development']
   },
   'land_cover': {
     name: 'Land Cover',
@@ -68,7 +76,7 @@ const availableFactors = {
     icon: Layers,
     color: 'text-green-500',
     datasets: ['esa_worldcover'],
-    applicableFor: ['Agriculture', 'Battery Energy Storage (BESS)']
+    applicableFor: ['Agriculture', 'Battery Energy Storage (BESS)', 'Urban Development', 'Mining']
   },
   'land_use': {
     name: 'Land Use Suitability',
@@ -76,7 +84,23 @@ const availableFactors = {
     icon: Layers,
     color: 'text-green-500',
     datasets: ['esa_worldcover'],
-    applicableFor: ['Battery Energy Storage (BESS)']
+    applicableFor: ['Battery Energy Storage (BESS)', 'Urban Development']
+  },
+  'population_density': {
+    name: 'Population Density',
+    description: 'Population distribution from WorldPop database',
+    icon: Settings,
+    color: 'text-indigo-600',
+    datasets: ['worldpop_density'],
+    applicableFor: ['Urban Development', 'Infrastructure Planning']
+  },
+  'protected_areas': {
+    name: 'Protected Areas / Environmental Constraints',
+    description: 'Environmental protection zones and restricted areas',
+    icon: Settings,
+    color: 'text-red-600',
+    datasets: ['protected_areas_wdpa'],
+    applicableFor: ['Wind Energy', 'Urban Development', 'Mining', 'Infrastructure Planning']
   },
   'grid_distance': {
     name: 'Grid Connection Distance',
@@ -84,7 +108,7 @@ const availableFactors = {
     icon: Zap,
     color: 'text-purple-600',
     datasets: ['osm_grid'],
-    applicableFor: ['Solar Farm', 'Battery Energy Storage (BESS)']
+    applicableFor: ['Solar Farm', 'Battery Energy Storage (BESS)', 'Wind Energy']
   },
   'road_access': {
     name: 'Road Network Distance',
@@ -92,7 +116,31 @@ const availableFactors = {
     icon: Car,
     color: 'text-gray-600',
     datasets: ['osm_roads'],
-    applicableFor: ['Solar Farm', 'Battery Energy Storage (BESS)']
+    applicableFor: ['Solar Farm', 'Battery Energy Storage (BESS)', 'Mining', 'Infrastructure Planning']
+  },
+  'highway_access': {
+    name: 'Highway Access',
+    description: 'Distance to major highways and transportation corridors',
+    icon: Car,
+    color: 'text-slate-600',
+    datasets: ['osm_highways'],
+    applicableFor: ['Urban Development', 'Mining', 'Infrastructure Planning']
+  },
+  'geology': {
+    name: 'Geological Conditions',
+    description: 'Geological stability and mineral resource data',
+    icon: Mountain,
+    color: 'text-amber-600',
+    datasets: ['geological_survey'],
+    applicableFor: ['Mining', 'Infrastructure Planning']
+  },
+  'water_resources': {
+    name: 'Water Resources',
+    description: 'Proximity to water bodies and availability',
+    icon: Cloud,
+    color: 'text-teal-600',
+    datasets: ['water_bodies_osm'],
+    applicableFor: ['Urban Development', 'Mining', 'Infrastructure Planning']
   }
 };
 
@@ -123,6 +171,45 @@ const defaultConfigurations = {
       'rainfall': 0.30,
       'land_cover': 0.20,
       'slope': 0.15
+    }
+  },
+  'Wind Energy': {
+    factors: ['wind_speed', 'slope', 'grid_distance', 'protected_areas'],
+    weights: {
+      'wind_speed': 0.45,
+      'slope': 0.25,
+      'grid_distance': 0.20,
+      'protected_areas': 0.10
+    }
+  },
+  'Urban Development': {
+    factors: ['population_density', 'slope', 'highway_access', 'water_resources', 'protected_areas'],
+    weights: {
+      'population_density': 0.30,
+      'slope': 0.25,
+      'highway_access': 0.20,
+      'water_resources': 0.15,
+      'protected_areas': 0.10
+    }
+  },
+  'Mining': {
+    factors: ['geology', 'slope', 'road_access', 'water_resources', 'protected_areas'],
+    weights: {
+      'geology': 0.35,
+      'slope': 0.25,
+      'road_access': 0.20,
+      'water_resources': 0.12,
+      'protected_areas': 0.08
+    }
+  },
+  'Infrastructure Planning': {
+    factors: ['population_density', 'slope', 'highway_access', 'geology', 'protected_areas'],
+    weights: {
+      'population_density': 0.30,
+      'slope': 0.25,
+      'highway_access': 0.20,
+      'geology': 0.15,
+      'protected_areas': 0.10
     }
   }
 };

@@ -36,6 +36,14 @@ const getDefaultBufferRadius = (projectType: string): number => {
       return 2; // 2 km
     case 'Agriculture':
       return 5; // 5 km
+    case 'Wind Energy':
+      return 10; // 10 km - wider area for wind resource assessment
+    case 'Urban Development':
+      return 3; // 3 km - moderate area for urban planning
+    case 'Mining':
+      return 8; // 8 km - large area for resource exploration
+    case 'Infrastructure Planning':
+      return 5; // 5 km - regional infrastructure assessment
     default:
       return 2;
   }
