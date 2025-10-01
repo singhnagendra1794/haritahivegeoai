@@ -21,105 +21,119 @@ const INSURANCE_FACTORS: Record<string, InsuranceFactor> = {
     name: 'Flood Risk',
     description: 'FEMA flood zones + DEM elevation analysis',
     defaultWeight: 35,
-    applicable: ['mortgage']
+    applicable: ['empty-plot']
+  },
+  'soil_stability': {
+    id: 'soil_stability',
+    name: 'Soil Stability',
+    description: 'Geotechnical assessment',
+    defaultWeight: 25,
+    applicable: ['empty-plot']
+  },
+  'slope_terrain': {
+    id: 'slope_terrain',
+    name: 'Slope/Terrain',
+    description: 'Topographic risk factors',
+    defaultWeight: 20,
+    applicable: ['empty-plot']
+  },
+  'hazard_proximity': {
+    id: 'hazard_proximity',
+    name: 'Hazard Proximity',
+    description: 'Distance to hazard zones',
+    defaultWeight: 20,
+    applicable: ['empty-plot']
+  },
+  'structural_integrity': {
+    id: 'structural_integrity',
+    name: 'Structural Integrity',
+    description: 'Building condition analysis',
+    defaultWeight: 30,
+    applicable: ['home-ready']
+  },
+  'disaster_history': {
+    id: 'disaster_history',
+    name: 'Disaster History',
+    description: 'Past event footprints',
+    defaultWeight: 25,
+    applicable: ['home-ready']
   },
   'fire_risk': {
     id: 'fire_risk',
     name: 'Fire Risk',
-    description: 'Vegetation cover + slope + historical fire data',
+    description: 'Vegetation + wildfire zones',
     defaultWeight: 25,
-    applicable: ['mortgage', 'home']
+    applicable: ['home-ready']
   },
-  'crime_stability': {
-    id: 'crime_stability',
-    name: 'Crime/Neighborhood Stability',
-    description: 'Population + crime proxies analysis',
+  'emergency_access': {
+    id: 'emergency_access',
+    name: 'Emergency Access',
+    description: 'Response time analysis',
     defaultWeight: 20,
-    applicable: ['mortgage']
+    applicable: ['home-ready']
   },
-  'emergency_services': {
-    id: 'emergency_services',
-    name: 'Emergency Services Access',
-    description: 'Distance to fire stations, hospitals, hydrants',
-    defaultWeight: 20,
-    applicable: ['mortgage', 'home']
-  },
-  'building_condition': {
-    id: 'building_condition',
-    name: 'Roof/Building Condition',
-    description: 'Remote sensing overlays for structural analysis',
-    defaultWeight: 30,
-    applicable: ['home']
-  },
-  'disaster_footprint': {
-    id: 'disaster_footprint',
-    name: 'Historical Disaster Footprint',
-    description: 'Hurricane, flood, wildfire historical maps',
-    defaultWeight: 25,
-    applicable: ['home']
-  },
-  'accident_hotspots': {
-    id: 'accident_hotspots',
-    name: 'Road Accident Hotspots',
-    description: 'Traffic + crash datasets analysis',
+  'damage_assessment': {
+    id: 'damage_assessment',
+    name: 'Damage Assessment',
+    description: 'Post-event damage mapping',
     defaultWeight: 35,
-    applicable: ['vehicle']
+    applicable: ['post-disaster']
   },
-  'theft_likelihood': {
-    id: 'theft_likelihood',
-    name: 'Theft Likelihood',
-    description: 'Crime data + population density correlation',
+  'accessibility': {
+    id: 'accessibility',
+    name: 'Access/Recovery',
+    description: 'Infrastructure status',
     defaultWeight: 25,
-    applicable: ['vehicle']
+    applicable: ['post-disaster']
   },
-  'environmental_risk': {
-    id: 'environmental_risk',
-    name: 'Environmental Risk',
-    description: 'Flood-prone roads, snow/ice zones',
+  'secondary_hazards': {
+    id: 'secondary_hazards',
+    name: 'Secondary Hazards',
+    description: 'Aftershocks/flooding',
     defaultWeight: 25,
-    applicable: ['vehicle']
+    applicable: ['post-disaster']
   },
-  'major_roads': {
-    id: 'major_roads',
-    name: 'Proximity to Major Roads',
-    description: 'Distance to highways and arterials',
+  'resource_availability': {
+    id: 'resource_availability',
+    name: 'Resource Availability',
+    description: 'Repair material access',
     defaultWeight: 15,
-    applicable: ['vehicle']
+    applicable: ['post-disaster']
   }
 };
 
 const DEFAULT_CONFIGS: Record<string, { selectedFactors: string[]; weights: Record<string, number> }> = {
-  mortgage: {
-    selectedFactors: ['flood_risk', 'fire_risk', 'crime_stability', 'emergency_services'],
+  'empty-plot': {
+    selectedFactors: ['flood_risk', 'soil_stability', 'slope_terrain', 'hazard_proximity'],
     weights: {
       flood_risk: 35,
-      fire_risk: 25,
-      crime_stability: 20,
-      emergency_services: 20
+      soil_stability: 25,
+      slope_terrain: 20,
+      hazard_proximity: 20
     }
   },
-  home: {
-    selectedFactors: ['building_condition', 'disaster_footprint', 'fire_risk', 'emergency_services'],
+  'home-ready': {
+    selectedFactors: ['structural_integrity', 'disaster_history', 'fire_risk', 'emergency_access'],
     weights: {
-      building_condition: 30,
-      disaster_footprint: 25,
+      structural_integrity: 30,
+      disaster_history: 25,
       fire_risk: 25,
-      emergency_services: 20
+      emergency_access: 20
     }
   },
-  vehicle: {
-    selectedFactors: ['accident_hotspots', 'theft_likelihood', 'environmental_risk', 'major_roads'],
+  'post-disaster': {
+    selectedFactors: ['damage_assessment', 'accessibility', 'secondary_hazards', 'resource_availability'],
     weights: {
-      accident_hotspots: 35,
-      theft_likelihood: 25,
-      environmental_risk: 25,
-      major_roads: 15
+      damage_assessment: 35,
+      accessibility: 25,
+      secondary_hazards: 25,
+      resource_availability: 15
     }
   }
 };
 
 interface InsuranceFactorSelectorProps {
-  insuranceType: 'mortgage' | 'home' | 'vehicle';
+  insuranceType: 'empty-plot' | 'home-ready' | 'post-disaster';
   onSelect: (config: { selectedFactors: string[]; weights: Record<string, number> }) => void;
 }
 
@@ -194,9 +208,9 @@ export const InsuranceFactorSelector: React.FC<InsuranceFactorSelectorProps> = (
 
   const totalWeight = Object.values(weights).reduce((sum, val) => sum + val, 0);
   const insuranceTypeLabels = {
-    mortgage: 'Mortgage Insurance',
-    home: 'Home Insurance',
-    vehicle: 'Vehicle Insurance'
+    'empty-plot': 'Empty Plot Risk',
+    'home-ready': 'Built Home Risk',
+    'post-disaster': 'Post-Disaster Impact'
   };
 
   return (

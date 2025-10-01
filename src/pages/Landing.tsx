@@ -36,13 +36,13 @@ const Landing = () => {
     {
       id: 'insurance',
       title: 'Insurance Risk Intelligence',
-      description: 'Comprehensive risk analysis for mortgage, home, and vehicle insurance',
+      description: 'Assess risks for empty plots, built homes, and post-disaster impacts with AI-powered analysis',
       icon: Shield,
       badge: 'Risk Analytics',
       subModules: [
-        { name: 'Mortgage Insurance', icon: Home, route: '/insurance/mortgage' },
-        { name: 'Home Insurance', icon: Home, route: '/insurance/home' },
-        { name: 'Vehicle Insurance', icon: Car, route: '/insurance/vehicle' }
+        { name: 'Empty Plot Risk Analysis', icon: Layers, route: '/insurance/empty-plot' },
+        { name: 'Built Home Risk Analysis', icon: Home, route: '/insurance/home-ready' },
+        { name: 'Post-Disaster Impact', icon: Car, route: '/insurance/post-disaster' }
       ]
     }
   ];
@@ -80,24 +80,24 @@ const Landing = () => {
                   Insurance
                   <ChevronRight className="ml-1 h-4 w-4 transition-transform group-hover:rotate-90" />
                 </Button>
-                <div className="absolute top-full right-0 mt-2 w-48 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all bg-background border rounded-lg shadow-lg overflow-hidden">
+                <div className="absolute top-full right-0 mt-2 w-56 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all bg-background border rounded-lg shadow-lg overflow-hidden">
                   <button
-                    onClick={() => navigate('/insurance/mortgage')}
+                    onClick={() => navigate('/insurance/empty-plot')}
                     className="w-full px-4 py-2 text-left text-sm hover:bg-muted transition-colors"
                   >
-                    Mortgage Insurance
+                    Empty Plot Risk
                   </button>
                   <button
-                    onClick={() => navigate('/insurance/home')}
+                    onClick={() => navigate('/insurance/home-ready')}
                     className="w-full px-4 py-2 text-left text-sm hover:bg-muted transition-colors"
                   >
-                    Home Insurance
+                    Built Home Risk
                   </button>
                   <button
-                    onClick={() => navigate('/insurance/vehicle')}
+                    onClick={() => navigate('/insurance/post-disaster')}
                     className="w-full px-4 py-2 text-left text-sm hover:bg-muted transition-colors"
                   >
-                    Vehicle Insurance
+                    Post-Disaster Impact
                   </button>
                 </div>
               </div>

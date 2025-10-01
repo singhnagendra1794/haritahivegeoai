@@ -15,9 +15,9 @@ import DataUpload from "./pages/DataUpload";
 import Pricing from "./pages/Pricing";
 import Billing from "./pages/Billing";
 import NotFound from "./pages/NotFound";
-import InsuranceMortgage from "./pages/InsuranceMortgage";
-import InsuranceHome from "./pages/InsuranceHome";
-import InsuranceVehicle from "./pages/InsuranceVehicle";
+import InsuranceEmptyPlot from "./pages/InsuranceEmptyPlot";
+import InsuranceHomeReady from "./pages/InsuranceHomeReady";
+import InsurancePostDisaster from "./pages/InsurancePostDisaster";
 
 const queryClient = new QueryClient();
 
@@ -40,9 +40,9 @@ const App = () => (
           <Route path="/app/urban-planning" element={<UrbanPlanning />} />
           <Route path="/app/disaster-management" element={<DisasterManagement />} />
           <Route path="/app/data" element={<DataUpload />} />
-          <Route path="/insurance/mortgage" element={<InsuranceMortgage />} />
-          <Route path="/insurance/home" element={<InsuranceHome />} />
-          <Route path="/insurance/vehicle" element={<InsuranceVehicle />} />
+          <Route path="/insurance/empty-plot" element={<InsuranceEmptyPlot />} />
+          <Route path="/insurance/home-ready" element={<InsuranceHomeReady />} />
+          <Route path="/insurance/post-disaster" element={<InsurancePostDisaster />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
