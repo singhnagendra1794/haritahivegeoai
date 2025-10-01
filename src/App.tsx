@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import SuitabilityAnalysis from "./pages/SuitabilityAnalysis";
+import Landing from "./pages/Landing";
 import PublicLanding from "./pages/PublicLanding";
 import Dashboard from "./pages/Dashboard";
 import Environment from "./pages/Environment";
@@ -27,9 +28,10 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<SuitabilityAnalysis />} />
+          <Route path="/" element={<Landing />} />
+          <Route path="/site-suitability" element={<SuitabilityAnalysis />} />
           <Route path="/about" element={<PublicLanding />} />
-          <Route path="/suitability" element={<Navigate to="/" replace />} />
+          <Route path="/suitability" element={<Navigate to="/site-suitability" replace />} />
           <Route path="/app" element={<Dashboard />} />
           <Route path="/app/pricing" element={<Pricing />} />
           <Route path="/app/billing" element={<Billing />} />
