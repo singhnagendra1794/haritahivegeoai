@@ -4,15 +4,16 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { EnhancedRegionSelector } from '@/components/suitability/EnhancedRegionSelector';
 import { SuitabilityMap } from '@/components/suitability/SuitabilityMap';
-import { ResultsPanel } from '@/components/suitability/ResultsPanel';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { AlertTriangle, MapPin, RefreshCw, ArrowLeft, Layers } from 'lucide-react';
+import { AlertTriangle, MapPin, RefreshCw, ArrowLeft, Calendar, DollarSign, Home, CheckCircle2, XCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import logoImage from '@/assets/logo.jpg';
-import { InsuranceFactorSelector } from '@/components/insurance/InsuranceFactorSelector';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-type AnalysisStep = 'region-factors' | 'analysis' | 'results';
+type AnalysisStep = 'configuration' | 'analysis' | 'results';
 
 interface Region {
   type: 'buffer';
@@ -24,35 +25,52 @@ interface Region {
   name: string;
 }
 
-interface FactorConfig {
-  selectedFactors: string[];
-  weights: Record<string, number>;
+interface DamageAssessment {
+  damage_flag: boolean;
+  damage_severity: 'none' | 'minor' | 'moderate' | 'severe' | 'total';
+  damage_percentage: number;
+  change_score: number;
+  reconstruction_cost: number;
+  demolition_required: boolean;
+  demolition_cost: number;
+  claims_priority: 'low' | 'medium' | 'high' | 'critical';
+  recommended_action: string;
+  damage_details: {
+    roof_damage: number;
+    structure_damage: number;
+    water_damage: number;
+    vegetation_loss: number;
+  };
+  visualization_url?: string;
+  before_image_url?: string;
+  after_image_url?: string;
 }
 
 interface AnalysisConfig {
-  insuranceType: string;
   region?: Region;
-  factors?: FactorConfig;
+  disaster_type?: string;
+  baseline_date?: string;
+  current_date?: string;
 }
 
 interface AnalysisResult {
   projectId: string;
-  suitabilityData: any;
-  topSites: Array<{
-    id: string;
-    score: number;
-    coordinates: [number, number];
-    area: number;
-    address?: string;
-  }>;
-  breakdown: Record<string, number>;
+  assessment: DamageAssessment;
+  provenance: {
+    baseline_date: string;
+    current_date: string;
+    datasets: string[];
+    analysis_date: string;
+  };
 }
 
 const InsurancePostDisaster = () => {
   const { toast } = useToast();
-  const [currentStep, setCurrentStep] = useState<AnalysisStep>('region-factors');
+  const [currentStep, setCurrentStep] = useState<AnalysisStep>('configuration');
   const [analysisConfig, setAnalysisConfig] = useState<AnalysisConfig>({
-    insuranceType: 'post-disaster'
+    baseline_date: '2024-01-01',
+    current_date: new Date().toISOString().split('T')[0],
+    disaster_type: 'hurricane'
   });
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -61,58 +79,57 @@ const InsurancePostDisaster = () => {
     setAnalysisConfig(prev => ({ ...prev, region }));
   };
 
-  const handleFactorSelect = (factors: FactorConfig) => {
-    setAnalysisConfig(prev => ({ ...prev, factors }));
-    setCurrentStep('analysis');
-  };
-
   const runAnalysis = async () => {
-    if (!analysisConfig.region || !analysisConfig.factors) {
+    if (!analysisConfig.region) {
       toast({
         variant: "destructive",
         title: "Missing Information",
-        description: "Please complete region and factor selection."
+        description: "Please select a property location."
       });
       return;
     }
 
     setIsAnalyzing(true);
     toast({
-      title: "Analysis Starting",
-      description: "Running post-disaster impact analysis..."
+      title: "Damage Assessment Starting",
+      description: "Analyzing property damage from satellite imagery..."
     });
 
     try {
-      const sessionId = crypto.randomUUID();
-      
-      const { data: result, error } = await supabase.functions.invoke('insurance-risk-analysis', {
+      const { data: result, error } = await supabase.functions.invoke('change-detection', {
         body: {
-          insuranceType: 'post-disaster',
-          weights: analysisConfig.factors.weights,
-          selectedFactors: analysisConfig.factors.selectedFactors,
-          region: {
-            center: analysisConfig.region.data.center,
-            bufferRadius: analysisConfig.region.data.radius,
-            address: analysisConfig.region.data.address
+          address: analysisConfig.region.data.address,
+          coordinates: {
+            lat: analysisConfig.region.data.center[1],
+            lng: analysisConfig.region.data.center[0]
           },
-          sessionId: sessionId,
+          baseline_date: analysisConfig.baseline_date,
+          current_date: analysisConfig.current_date,
+          buffer: analysisConfig.region.data.radius * 1000, // Convert to meters
+          analysis_type: 'all',
+          disaster_type: analysisConfig.disaster_type
         }
       });
 
       if (error) throw error;
-      setAnalysisResult(result);
+      
+      setAnalysisResult({
+        projectId: crypto.randomUUID(),
+        assessment: result,
+        provenance: result.provenance
+      });
       setCurrentStep('results');
       
       toast({
-        title: "Analysis Complete",
-        description: "Post-disaster impact assessment generated successfully!"
+        title: "Assessment Complete",
+        description: "Property damage analysis generated successfully!"
       });
     } catch (error: any) {
       console.error('Analysis error:', error);
       toast({
         variant: "destructive",
         title: "Analysis Failed",
-        description: error.message || "Failed to complete risk analysis. Please try again."
+        description: error.message || "Failed to complete damage assessment. Please try again."
       });
     } finally {
       setIsAnalyzing(false);
@@ -120,17 +137,34 @@ const InsurancePostDisaster = () => {
   };
 
   const handleRestart = () => {
-    setCurrentStep('region-factors');
-    setAnalysisConfig({ insuranceType: 'post-disaster' });
+    setCurrentStep('configuration');
+    setAnalysisConfig({
+      baseline_date: '2024-01-01',
+      current_date: new Date().toISOString().split('T')[0],
+      disaster_type: 'hurricane'
+    });
     setAnalysisResult(null);
   };
 
-  const handleDownload = async (format: 'geotiff' | 'png' | 'pdf') => {
-    toast({
-      title: "Preparing Download",
-      description: `Generating ${format.toUpperCase()} export...`
-    });
-    // Download implementation will be added later
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case 'none': return 'text-green-600';
+      case 'minor': return 'text-yellow-600';
+      case 'moderate': return 'text-orange-600';
+      case 'severe': return 'text-red-600';
+      case 'total': return 'text-red-800';
+      default: return 'text-muted-foreground';
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'low': return 'bg-green-100 text-green-800';
+      case 'medium': return 'bg-yellow-100 text-yellow-800';
+      case 'high': return 'bg-orange-100 text-orange-800';
+      case 'critical': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
   };
 
   return (
@@ -148,8 +182,8 @@ const InsurancePostDisaster = () => {
               <div className="flex items-center gap-3">
                 <img src={logoImage} alt="Harita Hive" className="h-10 w-10 rounded-lg" />
                 <div>
-                  <h1 className="text-xl font-bold text-foreground">Post-Disaster Impact Analysis</h1>
-                  <p className="text-xs text-muted-foreground">Assess recovery and reinstatement risks</p>
+                  <h1 className="text-xl font-bold text-foreground">Post-Disaster Damage Assessment</h1>
+                  <p className="text-xs text-muted-foreground">Rapid damage analysis & claims intelligence</p>
                 </div>
               </div>
             </div>
@@ -166,17 +200,16 @@ const InsurancePostDisaster = () => {
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Left Panel - Configuration */}
           <div className="lg:col-span-1 space-y-6">
-            {/* Step 1 & 2: Region and Factors */}
-            {currentStep === 'region-factors' && (
+            {currentStep === 'configuration' && (
               <>
                 <Card className="p-6">
                   <div className="flex items-center gap-2 mb-4">
                     <MapPin className="h-5 w-5 text-primary" />
-                    <h2 className="text-lg font-semibold">Step 1: Select Location</h2>
+                    <h2 className="text-lg font-semibold">Step 1: Property Location</h2>
                   </div>
                   <EnhancedRegionSelector 
                     onSelect={handleRegionSelect}
-                    projectType="Post-Disaster Impact"
+                    projectType="Damage Assessment"
                   />
                 </Card>
 
@@ -184,28 +217,69 @@ const InsurancePostDisaster = () => {
                   <Card className="p-6">
                     <div className="flex items-center gap-2 mb-4">
                       <AlertTriangle className="h-5 w-5 text-primary" />
-                      <h2 className="text-lg font-semibold">Step 2: Select Risk Factors</h2>
+                      <h2 className="text-lg font-semibold">Step 2: Disaster Details</h2>
                     </div>
-                    <InsuranceFactorSelector
-                      insuranceType="vehicle"
-                      onSelect={handleFactorSelect}
-                    />
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Disaster Type</Label>
+                        <Select
+                          value={analysisConfig.disaster_type}
+                          onValueChange={(value) => setAnalysisConfig(prev => ({ ...prev, disaster_type: value }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="hurricane">Hurricane</SelectItem>
+                            <SelectItem value="flood">Flood</SelectItem>
+                            <SelectItem value="wildfire">Wildfire</SelectItem>
+                            <SelectItem value="earthquake">Earthquake</SelectItem>
+                            <SelectItem value="tornado">Tornado</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label>Baseline Date (Before)</Label>
+                        <Input
+                          type="date"
+                          value={analysisConfig.baseline_date}
+                          onChange={(e) => setAnalysisConfig(prev => ({ ...prev, baseline_date: e.target.value }))}
+                        />
+                      </div>
+
+                      <div>
+                        <Label>Current Date (After)</Label>
+                        <Input
+                          type="date"
+                          value={analysisConfig.current_date}
+                          onChange={(e) => setAnalysisConfig(prev => ({ ...prev, current_date: e.target.value }))}
+                        />
+                      </div>
+
+                      <Button
+                        className="w-full"
+                        onClick={() => setCurrentStep('analysis')}
+                      >
+                        Continue to Analysis
+                      </Button>
+                    </div>
                   </Card>
                 )}
               </>
             )}
 
-            {/* Step 3: Run Analysis */}
             {currentStep === 'analysis' && (
               <Card className="p-6">
-                <h2 className="text-lg font-semibold mb-4">Step 3: Run Analysis</h2>
+                <h2 className="text-lg font-semibold mb-4">Step 3: Run Damage Assessment</h2>
                 <div className="space-y-4">
                   <div className="p-4 bg-muted rounded-lg">
-                    <p className="text-sm font-medium mb-2">Analysis Configuration</p>
+                    <p className="text-sm font-medium mb-2">Assessment Configuration</p>
                     <div className="space-y-1 text-xs text-muted-foreground">
-                      <p>📍 Location: {analysisConfig.region?.data.address}</p>
-                      <p>🎯 Buffer: {analysisConfig.region?.data.radius} km</p>
-                      <p>⚖️ Factors: {analysisConfig.factors?.selectedFactors.length}</p>
+                      <p>📍 Property: {analysisConfig.region?.data.address}</p>
+                      <p>🌪️ Disaster: {analysisConfig.disaster_type}</p>
+                      <p>📅 Before: {analysisConfig.baseline_date}</p>
+                      <p>📅 After: {analysisConfig.current_date}</p>
                     </div>
                   </div>
                   <Button
@@ -216,16 +290,16 @@ const InsurancePostDisaster = () => {
                     {isAnalyzing ? (
                       <>
                         <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                        Analyzing...
+                        Analyzing Imagery...
                       </>
                     ) : (
-                      'Run Impact Analysis'
+                      'Run Damage Assessment'
                     )}
                   </Button>
                   <Button
                     variant="outline"
                     className="w-full"
-                    onClick={() => setCurrentStep('region-factors')}
+                    onClick={() => setCurrentStep('configuration')}
                   >
                     Back to Configuration
                   </Button>
@@ -233,17 +307,113 @@ const InsurancePostDisaster = () => {
               </Card>
             )}
 
-            {/* Results Panel */}
             {currentStep === 'results' && analysisResult && (
               <>
-                <ResultsPanel 
-                  result={analysisResult} 
-                  projectType="Post-Disaster Impact"
-                  onDownload={handleDownload}
-                />
+                {/* Damage Summary Card */}
+                <Card className="p-6">
+                  <h2 className="text-lg font-semibold mb-4">Damage Assessment Summary</h2>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                      <span className="text-sm font-medium">Damage Detected</span>
+                      {analysisResult.assessment.damage_flag ? (
+                        <XCircle className="h-5 w-5 text-red-600" />
+                      ) : (
+                        <CheckCircle2 className="h-5 w-5 text-green-600" />
+                      )}
+                    </div>
+
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Severity</Label>
+                      <p className={`text-lg font-bold ${getSeverityColor(analysisResult.assessment.damage_severity)}`}>
+                        {analysisResult.assessment.damage_severity.toUpperCase()}
+                      </p>
+                    </div>
+
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Damage Extent</Label>
+                      <p className="text-2xl font-bold">{analysisResult.assessment.damage_percentage}%</p>
+                    </div>
+
+                    <div className="pt-2 border-t">
+                      <Badge className={getPriorityColor(analysisResult.assessment.claims_priority)}>
+                        {analysisResult.assessment.claims_priority.toUpperCase()} PRIORITY
+                      </Badge>
+                    </div>
+                  </div>
+                </Card>
+
+                {/* Cost Estimates Card */}
+                <Card className="p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <DollarSign className="h-5 w-5 text-primary" />
+                    <h2 className="text-lg font-semibold">Cost Estimates</h2>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Reconstruction</Label>
+                      <p className="text-xl font-bold">
+                        ${(analysisResult.assessment.reconstruction_cost / 1000).toFixed(0)}K
+                      </p>
+                    </div>
+
+                    {analysisResult.assessment.demolition_required && (
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Demolition</Label>
+                        <p className="text-xl font-bold">
+                          ${(analysisResult.assessment.demolition_cost / 1000).toFixed(0)}K
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="pt-2 border-t">
+                      <Label className="text-xs text-muted-foreground">Total Estimated</Label>
+                      <p className="text-2xl font-bold text-primary">
+                        ${((analysisResult.assessment.reconstruction_cost + analysisResult.assessment.demolition_cost) / 1000).toFixed(0)}K
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+
+                {/* Damage Details Card */}
+                <Card className="p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Home className="h-5 w-5 text-primary" />
+                    <h2 className="text-lg font-semibold">Damage Breakdown</h2>
+                  </div>
+                  <div className="space-y-3">
+                    {Object.entries(analysisResult.assessment.damage_details).map(([key, value]) => (
+                      <div key={key}>
+                        <div className="flex justify-between text-sm mb-1">
+                          <span className="capitalize">{key.replace('_', ' ')}</span>
+                          <span className="font-medium">{Math.round(value * 100)}%</span>
+                        </div>
+                        <div className="h-2 bg-muted rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-primary" 
+                            style={{ width: `${value * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+
+                {/* Recommendations Card */}
+                <Card className="p-6">
+                  <h2 className="text-lg font-semibold mb-4">Recommended Action</h2>
+                  <div className="p-4 bg-muted rounded-lg">
+                    <p className="text-sm">{analysisResult.assessment.recommended_action}</p>
+                  </div>
+                  {analysisResult.assessment.demolition_required && (
+                    <Badge variant="destructive" className="mt-3">
+                      ⚠️ Demolition Required
+                    </Badge>
+                  )}
+                </Card>
+
                 <Button variant="outline" className="w-full" onClick={handleRestart}>
                   <RefreshCw className="mr-2 h-4 w-4" />
-                  Start New Analysis
+                  Assess Another Property
                 </Button>
               </>
             )}
@@ -254,7 +424,12 @@ const InsurancePostDisaster = () => {
             <Card className="p-6 h-[calc(100vh-12rem)] sticky top-24">
               <SuitabilityMap
                 region={analysisConfig.region}
-                result={analysisResult}
+                result={analysisResult ? {
+                  projectId: analysisResult.projectId,
+                  suitabilityData: analysisResult.assessment,
+                  topSites: [],
+                  breakdown: {}
+                } : undefined}
               />
             </Card>
           </div>
