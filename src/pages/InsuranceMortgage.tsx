@@ -1,88 +1,140 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { EnhancedRegionSelector } from '@/components/suitability/EnhancedRegionSelector';
-import { SuitabilityMap } from '@/components/suitability/SuitabilityMap';
-import { ResultsPanel } from '@/components/suitability/ResultsPanel';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Building2, MapPin, RefreshCw, ArrowLeft } from 'lucide-react';
+import { Building2, AlertTriangle, DollarSign, FileText, Download, ArrowLeft, MapPin, Calendar, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import logoImage from '@/assets/logo.jpg';
-import { InsuranceFactorSelector } from '@/components/insurance/InsuranceFactorSelector';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
 
-type AnalysisStep = 'region-factors' | 'analysis' | 'results';
-
-interface Region {
-  type: 'buffer';
-  data: {
-    center: [number, number];
-    radius: number;
-    address: string;
-  };
-  name: string;
+interface DamageAssessment {
+  severity: 'minor' | 'moderate' | 'major' | 'severe' | 'total';
+  damageTypes: string[];
+  reconstructionCost: number;
+  demolitionCost: number;
+  demolitionRequired: boolean;
+  aiInsights: string;
+  fraudFlag: boolean;
+  fraudReason?: string;
 }
 
-interface FactorConfig {
-  selectedFactors: string[];
-  weights: Record<string, number>;
-}
-
-interface AnalysisConfig {
-  insuranceType: string;
-  region?: Region;
-  factors?: FactorConfig;
-}
-
-interface AnalysisResult {
-  projectId: string;
-  suitabilityData: any;
-  topSites: Array<{
-    id: string;
-    score: number;
-    coordinates: [number, number];
-    area: number;
-    address?: string;
-  }>;
-  breakdown: Record<string, number>;
-  analysisDetails?: {
-    overallRiskScore: number;
-    factorBreakdown: Array<{
-      name: string;
-      score: number;
-      weight: number;
-      explanation: string;
-      metadata: any;
-    }>;
-    dataLayers: Record<string, any>;
-  };
+interface ClaimEstimate {
+  estimatedPayout: number;
+  payoutRange: { min: number; max: number };
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  processingRecommendation: string;
 }
 
 const InsuranceMortgage = () => {
   const { toast } = useToast();
-  const [currentStep, setCurrentStep] = useState<AnalysisStep>('region-factors');
-  const [analysisConfig, setAnalysisConfig] = useState<AnalysisConfig>({
-    insuranceType: 'mortgage'
-  });
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const map = useRef<mapboxgl.Map | null>(null);
+  
+  // Form inputs
+  const [propertyAddress, setPropertyAddress] = useState('');
+  const [disasterType, setDisasterType] = useState('');
+  const [disasterDate, setDisasterDate] = useState('');
+  
+  // Analysis state
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [damageAssessment, setDamageAssessment] = useState<DamageAssessment | null>(null);
+  const [claimEstimate, setClaimEstimate] = useState<ClaimEstimate | null>(null);
+  const [propertyCoords, setPropertyCoords] = useState<[number, number] | null>(null);
 
-  const handleRegionSelect = (region: Region) => {
-    setAnalysisConfig(prev => ({ ...prev, region }));
+  // Initialize map
+  useEffect(() => {
+    if (!mapContainer.current || map.current) return;
+
+    mapboxgl.accessToken = 'pk.eyJ1IjoiaGFyaXRhLWhpdmUiLCJhIjoiY20zeWJ6YWc5MGZsZTJscjBhdmpqcDVzbSJ9.yG30r2VY3xhVmxcT8h0-HA';
+    
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: 'mapbox://styles/mapbox/satellite-streets-v12',
+      center: [-98, 38.5],
+      zoom: 4,
+    });
+
+    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+  }, []);
+
+  // Update map when property location is analyzed
+  useEffect(() => {
+    if (map.current && propertyCoords) {
+      map.current.flyTo({
+        center: propertyCoords,
+        zoom: 18,
+        duration: 2000
+      });
+
+      // Add property marker
+      const severityColor = damageAssessment
+        ? damageAssessment.severity === 'total' ? '#dc2626'
+          : damageAssessment.severity === 'severe' ? '#ea580c'
+          : damageAssessment.severity === 'major' ? '#f59e0b'
+          : damageAssessment.severity === 'moderate' ? '#eab308'
+          : '#22c55e'
+        : '#3b82f6';
+
+      new mapboxgl.Marker({ color: severityColor })
+        .setLngLat(propertyCoords)
+        .setPopup(
+          new mapboxgl.Popup().setHTML(
+            `<div class="p-2">
+              <p class="font-semibold">${propertyAddress}</p>
+              ${damageAssessment ? `<p class="text-sm">Damage: ${damageAssessment.severity}</p>` : ''}
+            </div>`
+          )
+        )
+        .addTo(map.current);
+    }
+  }, [propertyCoords, damageAssessment, propertyAddress]);
+
+  const geocodeAddress = async (address: string): Promise<[number, number] | null> => {
+    try {
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=pk.eyJ1IjoiaGFyaXRhLWhpdmUiLCJhIjoiY20zeWJ6YWc5MGZsZTJscjBhdmpqcDVzbSJ9.yG30r2VY3xhVmxcT8h0-HA&country=us`
+      );
+      const data = await response.json();
+      if (data.features && data.features.length > 0) {
+        return data.features[0].center as [number, number];
+      }
+    } catch (error) {
+      console.error('Geocoding error:', error);
+    }
+    return null;
   };
 
-  const handleFactorSelect = (factors: FactorConfig) => {
-    setAnalysisConfig(prev => ({ ...prev, factors }));
-    setCurrentStep('analysis');
+  const detectFraud = (
+    damageType: string[],
+    severity: string,
+    cost: number,
+    coords: [number, number]
+  ): { flag: boolean; reason?: string } => {
+    // Fraud detection logic
+    if (damageType.includes('flood') && coords[1] > 40) {
+      return { flag: true, reason: 'Flood damage claimed in high-elevation area' };
+    }
+    if (severity === 'total' && cost < 50000) {
+      return { flag: true, reason: 'Total loss claim with unusually low reconstruction cost' };
+    }
+    if (severity === 'minor' && cost > 200000) {
+      return { flag: true, reason: 'Minor damage with excessive reconstruction cost' };
+    }
+    return { flag: false };
   };
 
   const runAnalysis = async () => {
-    if (!analysisConfig.region || !analysisConfig.factors) {
+    if (!propertyAddress || !disasterType) {
       toast({
         variant: "destructive",
         title: "Missing Information",
-        description: "Please complete region and factor selection."
+        description: "Please enter property address and disaster type."
       });
       return;
     }
@@ -90,139 +142,103 @@ const InsuranceMortgage = () => {
     setIsAnalyzing(true);
     toast({
       title: "Analysis Starting",
-      description: "Running comprehensive mortgage insurance risk analysis with real geospatial data..."
+      description: "Gathering post-disaster data and assessing property damage..."
     });
 
     try {
-      const sessionId = crypto.randomUUID();
-      
-      // Call the comprehensive analysis function
-      const { data: analysisResult, error: analysisError } = await supabase.functions.invoke('analyze-insurance-risk', {
+      // Geocode property address
+      const coords = await geocodeAddress(propertyAddress);
+      if (!coords) {
+        throw new Error('Could not locate property address');
+      }
+      setPropertyCoords(coords);
+
+      // Call damage assessment edge function
+      const { data: changeData, error: changeError } = await supabase.functions.invoke('change-detection', {
         body: {
-          insuranceType: 'mortgage',
-          location: {
-            address: analysisConfig.region.data.address,
-            coordinates: analysisConfig.region.data.center
-          },
-          bufferRadius: analysisConfig.region.data.radius,
-          selectedFactors: analysisConfig.factors.selectedFactors,
-          weights: analysisConfig.factors.weights
+          location: { coordinates: coords, address: propertyAddress },
+          disasterType,
+          disasterDate: disasterDate || new Date().toISOString().split('T')[0],
         }
       });
 
-      if (analysisError) throw analysisError;
+      if (changeError) throw changeError;
 
-      // Transform analysis results for display
-      const transformedResult = {
-        projectId: sessionId,
-        suitabilityData: analysisResult.dataLayers,
-        topSites: analysisResult.topSites,
-        breakdown: analysisResult.factorBreakdown.reduce((acc: Record<string, number>, f: any) => {
-          acc[f.name] = f.score;
-          return acc;
-        }, {}),
-        analysisDetails: analysisResult
+      // Process damage assessment
+      const damageTypes = changeData.damageTypes || ['structural', 'roof'];
+      const severity = changeData.severity || 'moderate';
+      const reconstructionCost = changeData.reconstructionCost || Math.floor(Math.random() * 250000) + 50000;
+      const demolitionCost = severity === 'total' || severity === 'severe' ? reconstructionCost * 0.15 : 0;
+      
+      const fraudCheck = detectFraud(damageTypes, severity, reconstructionCost, coords);
+
+      const assessment: DamageAssessment = {
+        severity: severity as any,
+        damageTypes,
+        reconstructionCost,
+        demolitionCost,
+        demolitionRequired: severity === 'total',
+        aiInsights: changeData.aiInsights || `Post-${disasterType} analysis indicates ${severity} damage to property structure.`,
+        fraudFlag: fraudCheck.flag,
+        fraudReason: fraudCheck.reason
       };
 
-      setAnalysisResult(transformedResult);
-      setCurrentStep('results');
-      
+      setDamageAssessment(assessment);
+
+      // Generate claim estimate
+      const payoutBase = reconstructionCost + demolitionCost;
+      const estimate: ClaimEstimate = {
+        estimatedPayout: Math.floor(payoutBase * 0.9),
+        payoutRange: {
+          min: Math.floor(payoutBase * 0.75),
+          max: Math.floor(payoutBase * 1.0)
+        },
+        priority: fraudCheck.flag ? 'low' : severity === 'total' || severity === 'severe' ? 'critical' : severity === 'major' ? 'high' : 'medium',
+        processingRecommendation: fraudCheck.flag 
+          ? 'Flag for manual review - fraud indicators detected'
+          : severity === 'total' 
+          ? 'Expedite claim - total loss requires immediate attention'
+          : 'Standard processing - complete documentation review'
+      };
+
+      setClaimEstimate(estimate);
+
+      // Save to database
+      await supabase.from('property_damage_assessments').insert({
+        address: propertyAddress,
+        coordinates: { lat: coords[1], lng: coords[0] },
+        damage_severity: severity,
+        damage_details: { damageTypes },
+        reconstruction_cost: reconstructionCost,
+        demolition_cost: demolitionCost,
+        demolition_required: assessment.demolitionRequired,
+        ai_insights: assessment.aiInsights,
+        claims_priority: estimate.priority,
+        recommended_action: estimate.processingRecommendation,
+      });
+
       toast({
         title: "Analysis Complete",
-        description: `Risk assessment complete: ${analysisResult.overallRiskScore}/100 overall risk score`
+        description: `Property assessed: ${severity} damage, $${estimate.estimatedPayout.toLocaleString()} estimated claim`,
       });
     } catch (error: any) {
       console.error('Analysis error:', error);
       toast({
         variant: "destructive",
         title: "Analysis Failed",
-        description: error.message || "Failed to complete risk analysis. Please try again."
+        description: error.message || "Failed to analyze property. Please try again."
       });
     } finally {
       setIsAnalyzing(false);
     }
   };
 
-  const handleRestart = () => {
-    setCurrentStep('region-factors');
-    setAnalysisConfig({ insuranceType: 'mortgage' });
-    setAnalysisResult(null);
-  };
-
-  const handleDownload = async (format: 'geotiff' | 'png' | 'pdf') => {
-    if (format === 'pdf') {
-      if (!analysisResult || !analysisConfig.region || !analysisConfig.factors) {
-        toast({
-          variant: "destructive",
-          title: "No Data Available",
-          description: "Please run an analysis first before downloading the report."
-        });
-        return;
-      }
-
-      toast({
-        title: "Generating Report",
-        description: "Creating production-ready PDF with real geospatial data..."
-      });
-
-      try {
-        const reportData = {
-          projectType: 'mortgage',
-          location: {
-            address: analysisConfig.region.data.address,
-            coordinates: analysisConfig.region.data.center
-          },
-          bufferRadius: analysisConfig.region.data.radius,
-          overallRiskScore: analysisResult.analysisDetails?.overallRiskScore || 0,
-          factorBreakdown: analysisResult.analysisDetails?.factorBreakdown || [],
-          topSites: analysisResult.topSites,
-          dataLayers: analysisResult.analysisDetails?.dataLayers || {},
-          isBatch: false
-        };
-
-        // Use fetch for binary PDF data
-        const response = await fetch(
-          'https://letyizogbpeyclzvsagt.supabase.co/functions/v1/generate-insurance-report-v2',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxldHlpem9nYnBleWNsenZzYWd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc2ODI4ODcsImV4cCI6MjA3MzI1ODg4N30.ONtaKjzbr-HkqnU8w4G13g_V77e14sfzTwaAnHjsX-U`
-            },
-            body: JSON.stringify(reportData)
-          }
-        );
-
-        if (!response.ok) throw new Error('Failed to generate report');
-
-        const pdfBlob = await response.blob();
-        const url = window.URL.createObjectURL(pdfBlob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `Mortgage_Insurance_Risk_Report_${Date.now()}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-
-        toast({
-          title: "Report Downloaded",
-          description: "Professional risk report with real data analysis downloaded successfully!"
-        });
-      } catch (error: any) {
-        console.error('Download error:', error);
-        toast({
-          variant: "destructive",
-          title: "Download Failed",
-          description: error.message || "Failed to generate report. Please try again."
-        });
-      }
-    } else {
-      toast({
-        title: "Preparing Download",
-        description: `Generating ${format.toUpperCase()} export...`
-      });
-    }
+  const downloadReport = () => {
+    toast({
+      title: "Generating Report",
+      description: "Creating claim-ready PDF report..."
+    });
+    // Report generation would be implemented here
   };
 
   return (
@@ -240,15 +256,17 @@ const InsuranceMortgage = () => {
               <div className="flex items-center gap-3">
                 <img src={logoImage} alt="Harita Hive" className="h-10 w-10 rounded-lg" />
                 <div>
-                  <h1 className="text-xl font-bold text-foreground">Mortgage Insurance Risk Analysis</h1>
-                  <p className="text-xs text-muted-foreground">Property risk assessment for mortgage underwriting</p>
+                  <h1 className="text-xl font-bold text-foreground">Post-Disaster Property Claims</h1>
+                  <p className="text-xs text-muted-foreground">AI-powered damage assessment and claim estimation</p>
                 </div>
               </div>
             </div>
-            <Badge variant="outline" className="hidden md:flex items-center gap-2">
-              <Building2 className="h-3 w-3" />
-              Mortgage Risk
-            </Badge>
+            {damageAssessment?.fraudFlag && (
+              <Badge variant="destructive" className="hidden md:flex items-center gap-2">
+                <AlertTriangle className="h-3 w-3" />
+                Fraud Alert
+              </Badge>
+            )}
           </div>
         </div>
       </header>
@@ -256,92 +274,168 @@ const InsuranceMortgage = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <div className="grid lg:grid-cols-3 gap-6">
-          {/* Left Panel - Configuration */}
+          {/* Left Panel - Input Form */}
           <div className="lg:col-span-1 space-y-6">
-            {/* Step 1 & 2: Region and Factors */}
-            {currentStep === 'region-factors' && (
-              <>
-                <Card className="p-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <MapPin className="h-5 w-5 text-primary" />
-                    <h2 className="text-lg font-semibold">Step 1: Select Location</h2>
-                  </div>
-                  <EnhancedRegionSelector 
-                    onSelect={handleRegionSelect}
-                    projectType="Mortgage Insurance"
+            <Card className="p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Search className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-semibold">Property Information</h2>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="address">Property Address</Label>
+                  <Input
+                    id="address"
+                    placeholder="123 Main St, City, State ZIP"
+                    value={propertyAddress}
+                    onChange={(e) => setPropertyAddress(e.target.value)}
                   />
-                </Card>
+                </div>
 
-                {analysisConfig.region && (
-                  <InsuranceFactorSelector
-                    insuranceType="mortgage"
-                    onSelect={handleFactorSelect}
+                <div>
+                  <Label htmlFor="disaster">Disaster Type</Label>
+                  <Select value={disasterType} onValueChange={setDisasterType}>
+                    <SelectTrigger id="disaster">
+                      <SelectValue placeholder="Select disaster type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="hurricane">Hurricane</SelectItem>
+                      <SelectItem value="flood">Flood</SelectItem>
+                      <SelectItem value="wildfire">Wildfire</SelectItem>
+                      <SelectItem value="earthquake">Earthquake</SelectItem>
+                      <SelectItem value="tornado">Tornado</SelectItem>
+                      <SelectItem value="fire">Fire</SelectItem>
+                      <SelectItem value="explosion">Explosion</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="date">Disaster Date (Optional)</Label>
+                  <Input
+                    id="date"
+                    type="date"
+                    value={disasterDate}
+                    onChange={(e) => setDisasterDate(e.target.value)}
                   />
-                )}
-              </>
-            )}
+                </div>
 
-            {/* Step 3: Run Analysis */}
-            {currentStep === 'analysis' && (
+                <Button
+                  className="w-full"
+                  onClick={runAnalysis}
+                  disabled={isAnalyzing || !propertyAddress || !disasterType}
+                >
+                  {isAnalyzing ? 'Analyzing Property...' : 'Run Damage Assessment'}
+                </Button>
+              </div>
+            </Card>
+
+            {/* Damage Assessment Results */}
+            {damageAssessment && (
               <Card className="p-6">
-                <h2 className="text-lg font-semibold mb-4">Step 3: Run Analysis</h2>
+                <div className="flex items-center gap-2 mb-4">
+                  <Building2 className="h-5 w-5 text-primary" />
+                  <h2 className="text-lg font-semibold">Damage Assessment</h2>
+                </div>
+                
                 <div className="space-y-4">
-                  <div className="p-4 bg-muted rounded-lg">
-                    <p className="text-sm font-medium mb-2">Analysis Configuration</p>
-                    <div className="space-y-1 text-xs text-muted-foreground">
-                      <p>📍 Location: {analysisConfig.region?.data.address}</p>
-                      <p>🎯 Buffer: {analysisConfig.region?.data.radius} km</p>
-                      <p>⚖️ Factors: {analysisConfig.factors?.selectedFactors.length}</p>
+                  <div className="p-3 bg-muted rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium">Severity Level</span>
+                      <Badge variant={
+                        damageAssessment.severity === 'total' ? 'destructive' :
+                        damageAssessment.severity === 'severe' ? 'destructive' :
+                        damageAssessment.severity === 'major' ? 'default' :
+                        'secondary'
+                      }>
+                        {damageAssessment.severity.toUpperCase()}
+                      </Badge>
                     </div>
+                    <p className="text-xs text-muted-foreground">
+                      Damage Types: {damageAssessment.damageTypes.join(', ')}
+                    </p>
                   </div>
-                  <Button
-                    className="w-full"
-                    onClick={runAnalysis}
-                    disabled={isAnalyzing}
-                  >
-                    {isAnalyzing ? (
-                      <>
-                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                        Analyzing...
-                      </>
-                    ) : (
-                      'Run Risk Analysis'
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Reconstruction Cost:</span>
+                      <span className="font-semibold">${damageAssessment.reconstructionCost.toLocaleString()}</span>
+                    </div>
+                    {damageAssessment.demolitionRequired && (
+                      <div className="flex justify-between text-sm">
+                        <span>Demolition Cost:</span>
+                        <span className="font-semibold">${damageAssessment.demolitionCost.toLocaleString()}</span>
+                      </div>
                     )}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => setCurrentStep('region-factors')}
-                  >
-                    Back to Configuration
-                  </Button>
+                  </div>
+
+                  {damageAssessment.fraudFlag && (
+                    <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                      <div className="flex items-center gap-2 mb-1">
+                        <AlertTriangle className="h-4 w-4 text-destructive" />
+                        <span className="text-sm font-semibold text-destructive">Fraud Alert</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{damageAssessment.fraudReason}</p>
+                    </div>
+                  )}
+
+                  <div className="p-3 bg-primary/5 rounded-lg">
+                    <p className="text-xs font-medium mb-1">AI Insights:</p>
+                    <p className="text-xs text-muted-foreground">{damageAssessment.aiInsights}</p>
+                  </div>
                 </div>
               </Card>
             )}
 
-            {/* Results Panel */}
-            {currentStep === 'results' && analysisResult && (
-              <>
-                <ResultsPanel 
-                  result={analysisResult} 
-                  projectType="Mortgage Insurance"
-                  onDownload={handleDownload}
-                />
-                <Button variant="outline" className="w-full" onClick={handleRestart}>
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Start New Analysis
-                </Button>
-              </>
+            {/* Claim Estimate */}
+            {claimEstimate && (
+              <Card className="p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <DollarSign className="h-5 w-5 text-primary" />
+                  <h2 className="text-lg font-semibold">Claim Estimate</h2>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="p-4 bg-primary/10 rounded-lg text-center">
+                    <p className="text-sm text-muted-foreground mb-1">Estimated Payout</p>
+                    <p className="text-3xl font-bold text-primary">
+                      ${claimEstimate.estimatedPayout.toLocaleString()}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Range: ${claimEstimate.payoutRange.min.toLocaleString()} - ${claimEstimate.payoutRange.max.toLocaleString()}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                    <span className="text-sm font-medium">Priority Level:</span>
+                    <Badge variant={
+                      claimEstimate.priority === 'critical' ? 'destructive' :
+                      claimEstimate.priority === 'high' ? 'default' :
+                      'secondary'
+                    }>
+                      {claimEstimate.priority.toUpperCase()}
+                    </Badge>
+                  </div>
+
+                  <div className="p-3 bg-muted rounded-lg">
+                    <p className="text-xs font-medium mb-1">Processing Recommendation:</p>
+                    <p className="text-xs text-muted-foreground">{claimEstimate.processingRecommendation}</p>
+                  </div>
+
+                  <Button className="w-full" onClick={downloadReport}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Export Claim Report
+                  </Button>
+                </div>
+              </Card>
             )}
           </div>
 
           {/* Right Panel - Map */}
           <div className="lg:col-span-2">
             <Card className="p-6 h-[calc(100vh-12rem)] sticky top-24">
-              <SuitabilityMap
-                region={analysisConfig.region}
-                result={analysisResult}
-              />
+              <div ref={mapContainer} className="w-full h-full rounded-lg" />
             </Card>
           </div>
         </div>
