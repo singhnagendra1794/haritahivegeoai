@@ -15,6 +15,11 @@ import DataUpload from "./pages/DataUpload";
 import Pricing from "./pages/Pricing";
 import Billing from "./pages/Billing";
 import NotFound from "./pages/NotFound";
+import InsuranceLanding from './pages/InsuranceLanding';
+import InsuranceMortgage from './pages/InsuranceMortgage';
+import InsuranceHome from './pages/InsuranceHome';
+import InsuranceVehicle from './pages/InsuranceVehicle';
+import InsuranceBatch from './pages/InsuranceBatch';
 import InsuranceEmptyPlot from "./pages/InsuranceEmptyPlot";
 import InsuranceHomeReady from "./pages/InsuranceHomeReady";
 import InsurancePostDisaster from "./pages/InsurancePostDisaster";
@@ -30,6 +35,19 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/site-suitability" element={<SuitabilityAnalysis />} />
+          
+          {/* New Insurance Routes */}
+          <Route path="/insurance" element={<InsuranceLanding />} />
+          <Route path="/insurance/mortgage" element={<InsuranceMortgage />} />
+          <Route path="/insurance/home" element={<InsuranceHome />} />
+          <Route path="/insurance/vehicle" element={<InsuranceVehicle />} />
+          <Route path="/insurance/batch" element={<InsuranceBatch />} />
+          
+          {/* Legacy Insurance Routes (kept for backwards compatibility) */}
+          <Route path="/insurance/empty-plot" element={<InsuranceEmptyPlot />} />
+          <Route path="/insurance/home-ready" element={<InsuranceHomeReady />} />
+          <Route path="/insurance/post-disaster" element={<InsurancePostDisaster />} />
+          
           <Route path="/about" element={<PublicLanding />} />
           <Route path="/suitability" element={<Navigate to="/site-suitability" replace />} />
           <Route path="/app" element={<Dashboard />} />
@@ -40,9 +58,6 @@ const App = () => (
           <Route path="/app/urban-planning" element={<UrbanPlanning />} />
           <Route path="/app/disaster-management" element={<DisasterManagement />} />
           <Route path="/app/data" element={<DataUpload />} />
-          <Route path="/insurance/empty-plot" element={<InsuranceEmptyPlot />} />
-          <Route path="/insurance/home-ready" element={<InsuranceHomeReady />} />
-          <Route path="/insurance/post-disaster" element={<InsurancePostDisaster />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

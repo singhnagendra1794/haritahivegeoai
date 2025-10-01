@@ -7,7 +7,7 @@ import { SuitabilityMap } from '@/components/suitability/SuitabilityMap';
 import { ResultsPanel } from '@/components/suitability/ResultsPanel';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { MapPin, Download, RefreshCw, ArrowLeft, Layers } from 'lucide-react';
+import { Building2, MapPin, RefreshCw, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import logoImage from '@/assets/logo.jpg';
 import { InsuranceFactorSelector } from '@/components/insurance/InsuranceFactorSelector';
@@ -48,11 +48,11 @@ interface AnalysisResult {
   breakdown: Record<string, number>;
 }
 
-const InsuranceEmptyPlot = () => {
+const InsuranceMortgage = () => {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState<AnalysisStep>('region-factors');
   const [analysisConfig, setAnalysisConfig] = useState<AnalysisConfig>({
-    insuranceType: 'empty-plot'
+    insuranceType: 'mortgage'
   });
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -79,7 +79,7 @@ const InsuranceEmptyPlot = () => {
     setIsAnalyzing(true);
     toast({
       title: "Analysis Starting",
-      description: "Running empty plot risk analysis..."
+      description: "Running mortgage insurance risk analysis..."
     });
 
     try {
@@ -87,7 +87,7 @@ const InsuranceEmptyPlot = () => {
       
       const { data: result, error } = await supabase.functions.invoke('insurance-risk-analysis', {
         body: {
-          insuranceType: 'empty-plot',
+          insuranceType: 'mortgage',
           weights: analysisConfig.factors.weights,
           selectedFactors: analysisConfig.factors.selectedFactors,
           region: {
@@ -105,7 +105,7 @@ const InsuranceEmptyPlot = () => {
       
       toast({
         title: "Analysis Complete",
-        description: "Empty plot risk assessment generated successfully!"
+        description: "Mortgage insurance risk assessment generated successfully!"
       });
     } catch (error: any) {
       console.error('Analysis error:', error);
@@ -121,7 +121,7 @@ const InsuranceEmptyPlot = () => {
 
   const handleRestart = () => {
     setCurrentStep('region-factors');
-    setAnalysisConfig({ insuranceType: 'empty-plot' });
+    setAnalysisConfig({ insuranceType: 'mortgage' });
     setAnalysisResult(null);
   };
 
@@ -130,7 +130,6 @@ const InsuranceEmptyPlot = () => {
       title: "Preparing Download",
       description: `Generating ${format.toUpperCase()} export...`
     });
-    // Download implementation will be added later
   };
 
   return (
@@ -140,7 +139,7 @@ const InsuranceEmptyPlot = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Link to="/">
+              <Link to="/insurance">
                 <Button variant="ghost" size="icon">
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
@@ -148,14 +147,14 @@ const InsuranceEmptyPlot = () => {
               <div className="flex items-center gap-3">
                 <img src={logoImage} alt="Harita Hive" className="h-10 w-10 rounded-lg" />
                 <div>
-                  <h1 className="text-xl font-bold text-foreground">Empty Plot Risk Analysis</h1>
-                  <p className="text-xs text-muted-foreground">Assess undeveloped land insurance risks</p>
+                  <h1 className="text-xl font-bold text-foreground">Mortgage Insurance Risk Analysis</h1>
+                  <p className="text-xs text-muted-foreground">Property risk assessment for mortgage underwriting</p>
                 </div>
               </div>
             </div>
             <Badge variant="outline" className="hidden md:flex items-center gap-2">
-              <Layers className="h-3 w-3" />
-              Insurance Risk Intelligence
+              <Building2 className="h-3 w-3" />
+              Mortgage Risk
             </Badge>
           </div>
         </div>
@@ -176,21 +175,15 @@ const InsuranceEmptyPlot = () => {
                   </div>
                   <EnhancedRegionSelector 
                     onSelect={handleRegionSelect}
-                    projectType="Empty Plot Risk"
+                    projectType="Mortgage Insurance"
                   />
                 </Card>
 
                 {analysisConfig.region && (
-                  <Card className="p-6">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Layers className="h-5 w-5 text-primary" />
-                      <h2 className="text-lg font-semibold">Step 2: Select Risk Factors</h2>
-                    </div>
-                    <InsuranceFactorSelector
-                      insuranceType="mortgage"
-                      onSelect={handleFactorSelect}
-                    />
-                  </Card>
+                  <InsuranceFactorSelector
+                    insuranceType="mortgage"
+                    onSelect={handleFactorSelect}
+                  />
                 )}
               </>
             )}
@@ -238,7 +231,7 @@ const InsuranceEmptyPlot = () => {
               <>
                 <ResultsPanel 
                   result={analysisResult} 
-                  projectType="Empty Plot Risk"
+                  projectType="Mortgage Insurance"
                   onDownload={handleDownload}
                 />
                 <Button variant="outline" className="w-full" onClick={handleRestart}>
@@ -264,4 +257,4 @@ const InsuranceEmptyPlot = () => {
   );
 };
 
-export default InsuranceEmptyPlot;
+export default InsuranceMortgage;

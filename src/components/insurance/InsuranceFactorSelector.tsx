@@ -16,124 +16,115 @@ interface InsuranceFactor {
 }
 
 const INSURANCE_FACTORS: Record<string, InsuranceFactor> = {
-  'flood_risk': {
-    id: 'flood_risk',
-    name: 'Flood Risk',
-    description: 'FEMA flood zones + DEM elevation analysis',
-    defaultWeight: 35,
-    applicable: ['empty-plot']
+  // Mortgage Insurance Factors
+  'flood_zone': {
+    id: 'flood_zone',
+    name: 'Flood Zone',
+    description: 'FEMA flood zones + DEM elevation',
+    defaultWeight: 40,
+    applicable: ['mortgage']
   },
-  'soil_stability': {
-    id: 'soil_stability',
-    name: 'Soil Stability',
-    description: 'Geotechnical assessment',
+  'wildfire_risk': {
+    id: 'wildfire_risk',
+    name: 'Wildfire Risk',
+    description: 'Vegetation cover + historical fire data',
     defaultWeight: 25,
-    applicable: ['empty-plot']
+    applicable: ['mortgage', 'home']
   },
-  'slope_terrain': {
-    id: 'slope_terrain',
-    name: 'Slope/Terrain',
+  'slope_elevation': {
+    id: 'slope_elevation',
+    name: 'Slope/Elevation',
     description: 'Topographic risk factors',
     defaultWeight: 20,
-    applicable: ['empty-plot']
+    applicable: ['mortgage', 'vehicle']
   },
-  'hazard_proximity': {
-    id: 'hazard_proximity',
-    name: 'Hazard Proximity',
-    description: 'Distance to hazard zones',
-    defaultWeight: 20,
-    applicable: ['empty-plot']
-  },
-  'structural_integrity': {
-    id: 'structural_integrity',
-    name: 'Structural Integrity',
-    description: 'Building condition analysis',
-    defaultWeight: 30,
-    applicable: ['home-ready']
-  },
-  'disaster_history': {
-    id: 'disaster_history',
-    name: 'Disaster History',
-    description: 'Past event footprints',
-    defaultWeight: 25,
-    applicable: ['home-ready']
-  },
-  'fire_risk': {
-    id: 'fire_risk',
-    name: 'Fire Risk',
-    description: 'Vegetation + wildfire zones',
-    defaultWeight: 25,
-    applicable: ['home-ready']
-  },
-  'emergency_access': {
-    id: 'emergency_access',
-    name: 'Emergency Access',
-    description: 'Response time analysis',
-    defaultWeight: 20,
-    applicable: ['home-ready']
-  },
-  'damage_assessment': {
-    id: 'damage_assessment',
-    name: 'Damage Assessment',
-    description: 'Post-event damage mapping',
-    defaultWeight: 35,
-    applicable: ['post-disaster']
-  },
-  'accessibility': {
-    id: 'accessibility',
-    name: 'Access/Recovery',
-    description: 'Infrastructure status',
-    defaultWeight: 25,
-    applicable: ['post-disaster']
-  },
-  'secondary_hazards': {
-    id: 'secondary_hazards',
-    name: 'Secondary Hazards',
-    description: 'Aftershocks/flooding',
-    defaultWeight: 25,
-    applicable: ['post-disaster']
-  },
-  'resource_availability': {
-    id: 'resource_availability',
-    name: 'Resource Availability',
-    description: 'Repair material access',
+  'infrastructure_access': {
+    id: 'infrastructure_access',
+    name: 'Infrastructure Access',
+    description: 'Roads, utilities, emergency services',
     defaultWeight: 15,
-    applicable: ['post-disaster']
+    applicable: ['mortgage', 'home']
+  },
+  
+  // Home Insurance Factors
+  'roof_structure': {
+    id: 'roof_structure',
+    name: 'Roof/Structure Proxy',
+    description: 'Land cover analysis for building condition',
+    defaultWeight: 30,
+    applicable: ['home']
+  },
+  'flood_risk_home': {
+    id: 'flood_risk_home',
+    name: 'Flood Risk',
+    description: 'FEMA zones + elevation analysis',
+    defaultWeight: 30,
+    applicable: ['home']
+  },
+  
+  // Vehicle Insurance Factors
+  'road_density': {
+    id: 'road_density',
+    name: 'Road Density/Traffic',
+    description: 'OSM road network + traffic risk',
+    defaultWeight: 40,
+    applicable: ['vehicle']
+  },
+  'flood_risk_vehicle': {
+    id: 'flood_risk_vehicle',
+    name: 'Flood Risk',
+    description: 'Flood-prone roads and areas',
+    defaultWeight: 25,
+    applicable: ['vehicle']
+  },
+  'crime_proxy': {
+    id: 'crime_proxy',
+    name: 'Crime Proxy',
+    description: 'Population density analysis',
+    defaultWeight: 20,
+    applicable: ['vehicle']
+  },
+  'terrain_hazard': {
+    id: 'terrain_hazard',
+    name: 'Terrain Hazard',
+    description: 'Slope and elevation risks',
+    defaultWeight: 15,
+    applicable: ['vehicle']
   }
 };
 
 const DEFAULT_CONFIGS: Record<string, { selectedFactors: string[]; weights: Record<string, number> }> = {
-  'empty-plot': {
-    selectedFactors: ['flood_risk', 'soil_stability', 'slope_terrain', 'hazard_proximity'],
+  'mortgage': {
+    selectedFactors: ['flood_zone', 'wildfire_risk', 'slope_elevation', 'infrastructure_access'],
     weights: {
-      flood_risk: 35,
-      soil_stability: 25,
-      slope_terrain: 20,
-      hazard_proximity: 20
+      flood_zone: 40,
+      wildfire_risk: 25,
+      slope_elevation: 20,
+      infrastructure_access: 15
     }
   },
-  'home-ready': {
-    selectedFactors: ['structural_integrity', 'disaster_history', 'fire_risk', 'emergency_access'],
+  'home': {
+    selectedFactors: ['roof_structure', 'flood_risk_home', 'wildfire_risk', 'infrastructure_access'],
     weights: {
-      structural_integrity: 30,
-      disaster_history: 25,
-      fire_risk: 25,
-      emergency_access: 20
+      roof_structure: 30,
+      flood_risk_home: 30,
+      wildfire_risk: 20,
+      infrastructure_access: 20
     }
   },
-  'post-disaster': {
-    selectedFactors: ['damage_assessment', 'accessibility', 'secondary_hazards', 'resource_availability'],
+  'vehicle': {
+    selectedFactors: ['road_density', 'flood_risk_vehicle', 'crime_proxy', 'terrain_hazard'],
     weights: {
-      damage_assessment: 35,
-      accessibility: 25,
-      secondary_hazards: 25,
-      resource_availability: 15
+      road_density: 40,
+      flood_risk_vehicle: 25,
+      crime_proxy: 20,
+      terrain_hazard: 15
     }
   }
 };
 
 interface InsuranceFactorSelectorProps {
-  insuranceType: 'empty-plot' | 'home-ready' | 'post-disaster';
+  insuranceType: 'mortgage' | 'home' | 'vehicle';
   onSelect: (config: { selectedFactors: string[]; weights: Record<string, number> }) => void;
 }
 
@@ -208,9 +199,9 @@ export const InsuranceFactorSelector: React.FC<InsuranceFactorSelectorProps> = (
 
   const totalWeight = Object.values(weights).reduce((sum, val) => sum + val, 0);
   const insuranceTypeLabels = {
-    'empty-plot': 'Empty Plot Risk',
-    'home-ready': 'Built Home Risk',
-    'post-disaster': 'Post-Disaster Impact'
+    'mortgage': 'Mortgage Insurance',
+    'home': 'Home Insurance',
+    'vehicle': 'Vehicle Insurance'
   };
 
   return (

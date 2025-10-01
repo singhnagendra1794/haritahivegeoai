@@ -33,48 +33,48 @@ interface SuitabilityResult {
 // Insurance risk configurations
 const insuranceConfigurations: Record<string, any> = {
   mortgage: {
-    factors: ['flood_risk', 'fire_risk', 'crime_stability', 'emergency_services'],
+    factors: ['flood_zone', 'wildfire_risk', 'slope_elevation', 'infrastructure_access'],
     defaultWeights: {
-      flood_risk: 35,
-      fire_risk: 25,
-      crime_stability: 20,
-      emergency_services: 20
+      flood_zone: 40,
+      wildfire_risk: 25,
+      slope_elevation: 20,
+      infrastructure_access: 15
     },
     riskRanges: {
-      flood_risk: { low: [0, 2], medium: [2, 5], high: [5, 10] },
-      fire_risk: { low: [0, 3], medium: [3, 6], high: [6, 10] },
-      crime_stability: { low: [0, 2], medium: [2, 5], high: [5, 10] },
-      emergency_services: { low: [0, 3], medium: [3, 5], high: [5, 10] }
+      flood_zone: { low: [0, 2], medium: [2, 5], high: [5, 10] },
+      wildfire_risk: { low: [0, 3], medium: [3, 6], high: [6, 10] },
+      slope_elevation: { low: [0, 2], medium: [2, 5], high: [5, 10] },
+      infrastructure_access: { low: [0, 3], medium: [3, 5], high: [5, 10] }
     }
   },
   home: {
-    factors: ['building_condition', 'disaster_footprint', 'fire_risk', 'emergency_services'],
+    factors: ['roof_structure', 'flood_risk_home', 'wildfire_risk', 'infrastructure_access'],
     defaultWeights: {
-      building_condition: 30,
-      disaster_footprint: 25,
-      fire_risk: 25,
-      emergency_services: 20
+      roof_structure: 30,
+      flood_risk_home: 30,
+      wildfire_risk: 20,
+      infrastructure_access: 20
     },
     riskRanges: {
-      building_condition: { low: [0, 3], medium: [3, 6], high: [6, 10] },
-      disaster_footprint: { low: [0, 2], medium: [2, 5], high: [5, 10] },
-      fire_risk: { low: [0, 3], medium: [3, 6], high: [6, 10] },
-      emergency_services: { low: [0, 3], medium: [3, 5], high: [5, 10] }
+      roof_structure: { low: [0, 3], medium: [3, 6], high: [6, 10] },
+      flood_risk_home: { low: [0, 2], medium: [2, 5], high: [5, 10] },
+      wildfire_risk: { low: [0, 3], medium: [3, 6], high: [6, 10] },
+      infrastructure_access: { low: [0, 3], medium: [3, 5], high: [5, 10] }
     }
   },
   vehicle: {
-    factors: ['accident_hotspots', 'theft_likelihood', 'environmental_risk', 'major_roads'],
+    factors: ['road_density', 'flood_risk_vehicle', 'crime_proxy', 'terrain_hazard'],
     defaultWeights: {
-      accident_hotspots: 35,
-      theft_likelihood: 25,
-      environmental_risk: 25,
-      major_roads: 15
+      road_density: 40,
+      flood_risk_vehicle: 25,
+      crime_proxy: 20,
+      terrain_hazard: 15
     },
     riskRanges: {
-      accident_hotspots: { low: [0, 3], medium: [3, 7], high: [7, 10] },
-      theft_likelihood: { low: [0, 2], medium: [2, 5], high: [5, 10] },
-      environmental_risk: { low: [0, 3], medium: [3, 6], high: [6, 10] },
-      major_roads: { low: [0, 2], medium: [2, 4], high: [4, 10] }
+      road_density: { low: [0, 3], medium: [3, 7], high: [7, 10] },
+      flood_risk_vehicle: { low: [0, 2], medium: [2, 5], high: [5, 10] },
+      crime_proxy: { low: [0, 3], medium: [3, 6], high: [6, 10] },
+      terrain_hazard: { low: [0, 2], medium: [2, 4], high: [4, 10] }
     }
   }
 };

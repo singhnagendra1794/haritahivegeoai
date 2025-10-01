@@ -187,7 +187,7 @@ const InsurancePostDisaster = () => {
                       <h2 className="text-lg font-semibold">Step 2: Select Risk Factors</h2>
                     </div>
                     <InsuranceFactorSelector
-                      insuranceType="post-disaster"
+                      insuranceType="vehicle"
                       onSelect={handleFactorSelect}
                     />
                   </Card>
