@@ -26,6 +26,7 @@ import InsurancePostDisaster from "./pages/InsurancePostDisaster";
 import InsuranceTriage from "./pages/InsuranceTriage";
 import InsurancePortfolio from "./pages/InsurancePortfolio";
 import InsuranceAdmin from "./pages/InsuranceAdmin";
+import InsuranceClaimsDashboard from "./pages/InsuranceClaimsDashboard";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,7 @@ const App = () => (
           
           {/* New Insurance Routes */}
           <Route path="/insurance" element={<InsuranceLanding />} />
+          <Route path="/insurance/claims-dashboard" element={<InsuranceClaimsDashboard />} />
           <Route path="/insurance/mortgage" element={<InsuranceMortgage />} />
           <Route path="/insurance/home" element={<InsuranceHome />} />
           <Route path="/insurance/vehicle" element={<InsuranceVehicle />} />

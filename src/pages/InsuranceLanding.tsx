@@ -10,6 +10,16 @@ import { useNavigate } from 'react-router-dom';
 const InsuranceLanding = () => {
   const navigate = useNavigate();
   
+  const postDisasterModule = {
+    id: 'claims-dashboard',
+    title: '🚨 Post-Disaster Claims Intelligence',
+    description: 'AI-powered automated damage assessment after natural disasters. Just enter disaster type + location for instant claims analysis.',
+    route: '/insurance/claims-dashboard',
+    color: 'text-red-600',
+    bgColor: 'bg-red-100',
+    features: ['AI-Powered', 'Multi-Source Data', 'Instant Results', 'Claims-Ready Reports']
+  };
+  
   const insuranceModules = [
     {
       id: 'mortgage',
@@ -100,11 +110,52 @@ const InsuranceLanding = () => {
       <main className="container mx-auto px-4 py-12">
         {/* Hero Section */}
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4">Select Insurance Risk Analysis</h2>
+          <h2 className="text-4xl font-bold mb-4">Insurance Risk Intelligence Platform</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Leverage GeoAI and multi-source geospatial data to assess insurance risks with precision. 
-            Choose your analysis type below to get started.
+            AI-powered post-disaster damage assessment and pre-underwriting risk analysis. 
+            Automated claims processing with multi-source authoritative data.
           </p>
+        </div>
+
+        {/* Featured: Post-Disaster Claims Dashboard */}
+        <div className="max-w-4xl mx-auto mb-12">
+          <Card className="border-2 border-red-200 bg-gradient-to-br from-red-50 to-white hover:shadow-xl transition-all duration-300">
+            <div className="p-8">
+              <div className="flex items-start justify-between mb-6">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 rounded-lg bg-red-100 flex items-center justify-center">
+                      <AlertTriangle className="h-6 w-6 text-red-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold">{postDisasterModule.title}</h3>
+                      <Badge variant="outline" className="mt-1">NEW • AI-Powered</Badge>
+                    </div>
+                  </div>
+                  <p className="text-muted-foreground mb-4">{postDisasterModule.description}</p>
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {postDisasterModule.features.map((feature) => (
+                      <Badge key={feature} variant="secondary" className="bg-red-100 text-red-800">
+                        {feature}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <Button 
+                size="lg" 
+                className="w-full bg-red-600 hover:bg-red-700"
+                onClick={() => navigate(postDisasterModule.route)}
+              >
+                Launch Claims Dashboard
+              </Button>
+            </div>
+          </Card>
+        </div>
+
+        <div className="text-center mb-8">
+          <h3 className="text-2xl font-semibold mb-2">Pre-Underwriting Risk Analysis</h3>
+          <p className="text-sm text-muted-foreground">Traditional property risk assessment for underwriting</p>
         </div>
 
         {/* Insurance Module Cards */}
