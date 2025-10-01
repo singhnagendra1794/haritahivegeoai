@@ -126,10 +126,74 @@ const InsuranceMortgage = () => {
   };
 
   const handleDownload = async (format: 'geotiff' | 'png' | 'pdf') => {
-    toast({
-      title: "Preparing Download",
-      description: `Generating ${format.toUpperCase()} export...`
-    });
+    if (format === 'pdf') {
+      if (!analysisResult || !analysisConfig.region || !analysisConfig.factors) {
+        toast({
+          variant: "destructive",
+          title: "No Data Available",
+          description: "Please run an analysis first before downloading the report."
+        });
+        return;
+      }
+
+      toast({
+        title: "Generating Report",
+        description: "Creating your insurance risk PDF report..."
+      });
+
+      try {
+        const reportData = {
+          projectType: 'mortgage',
+          location: {
+            address: analysisConfig.region.data.address,
+            coordinates: analysisConfig.region.data.center
+          },
+          bufferRadius: analysisConfig.region.data.radius,
+          riskScore: Math.round(analysisResult.topSites[0]?.score * 100 || 0),
+          factors: analysisConfig.factors.selectedFactors.map(factorId => ({
+            name: factorId.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+            score: Math.round(analysisConfig.factors!.weights[factorId] || 0),
+            weight: analysisConfig.factors!.weights[factorId] || 0
+          })),
+          topSites: analysisResult.topSites,
+          isBatch: false
+        };
+
+        const { data: pdfBlob, error } = await supabase.functions.invoke('generate-insurance-report', {
+          body: reportData
+        });
+
+        if (error) throw error;
+
+        // Convert response to blob and download
+        const blob = new Blob([pdfBlob], { type: 'application/pdf' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Mortgage_Insurance_Risk_Report_${Date.now()}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+        toast({
+          title: "Report Downloaded",
+          description: "Your insurance risk report has been generated successfully!"
+        });
+      } catch (error: any) {
+        console.error('Download error:', error);
+        toast({
+          variant: "destructive",
+          title: "Download Failed",
+          description: error.message || "Failed to generate report. Please try again."
+        });
+      }
+    } else {
+      toast({
+        title: "Preparing Download",
+        description: `Generating ${format.toUpperCase()} export...`
+      });
+    }
   };
 
   return (
