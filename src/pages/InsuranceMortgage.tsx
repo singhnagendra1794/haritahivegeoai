@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Building2, AlertTriangle, DollarSign, FileText, Download, ArrowLeft, MapPin, Calendar, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import logoImage from '@/assets/logo.jpg';
+import logoImage from '@/assets/logo.png';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 

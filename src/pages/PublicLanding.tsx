@@ -17,7 +17,7 @@ import {
   Sun,
   CheckCircle
 } from 'lucide-react';
-import logoImage from '@/assets/logo.jpg';
+import logoImage from '@/assets/logo.png';
 
 const PublicLanding = () => {
   const workflows = [

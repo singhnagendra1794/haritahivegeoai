@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { AlertTriangle, MapPin, RefreshCw, ArrowLeft, Calendar, DollarSign, Home, CheckCircle2, XCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import logoImage from '@/assets/logo.jpg';
+import logoImage from '@/assets/logo.png';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';

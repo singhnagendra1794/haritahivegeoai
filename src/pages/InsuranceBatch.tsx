@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, Download, FileText, ArrowLeft, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import logoImage from '@/assets/logo.jpg';
+import logoImage from '@/assets/logo.png';
 
 const InsuranceBatch = () => {
   const { toast } = useToast();

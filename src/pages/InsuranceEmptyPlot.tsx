@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { MapPin, Download, RefreshCw, ArrowLeft, Layers } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import logoImage from '@/assets/logo.jpg';
+import logoImage from '@/assets/logo.png';
 import { InsuranceFactorSelector } from '@/components/insurance/InsuranceFactorSelector';
 
 type AnalysisStep = 'region-factors' | 'analysis' | 'results';

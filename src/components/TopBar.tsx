@@ -12,7 +12,7 @@ import {
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import { LogOut, User, Settings, BarChart3, Search, Bell } from 'lucide-react';
-import logoImage from '@/assets/logo.jpg';
+import logoImage from '@/assets/logo.png';
 
 interface TopBarProps {
   onDashboardOpen: () => void;

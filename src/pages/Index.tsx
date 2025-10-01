@@ -19,7 +19,7 @@ import {
   Globe,
   Sun
 } from 'lucide-react';
-import logoImage from '@/assets/logo.jpg';
+import logoImage from '@/assets/logo.png';
 
 const Index = () => {
   const workflows = [

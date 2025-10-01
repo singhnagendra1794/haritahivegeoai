@@ -10,7 +10,7 @@ import { SuitabilityMap } from '@/components/suitability/SuitabilityMap';
 import { ResultsPanel } from '@/components/suitability/ResultsPanel';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import logoImage from '@/assets/logo.jpg';
+import logoImage from '@/assets/logo.png';
 
 type AnalysisStep = 'project-type' | 'region-factors' | 'analysis' | 'results';
 

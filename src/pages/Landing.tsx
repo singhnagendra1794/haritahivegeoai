@@ -14,7 +14,7 @@ import {
   ChevronRight,
   Layers
 } from 'lucide-react';
-import logoImage from '@/assets/logo.jpg';
+import logoImage from '@/assets/logo.png';
 
 const Landing = () => {
   const navigate = useNavigate();

@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Home, Car, Building2, Upload, ArrowLeft, Shield, AlertTriangle, BarChart3, Settings } from 'lucide-react';
-import logoImage from '@/assets/logo.jpg';
+import logoImage from '@/assets/logo.png';
 import { useNavigate } from 'react-router-dom';
 
 const InsuranceLanding = () => {
