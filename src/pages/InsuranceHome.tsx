@@ -180,13 +180,14 @@ const InsuranceHome = () => {
           isBatch: false
         };
 
+        // Use fetch for binary PDF data
         const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-insurance-report-v2`,
+          'https://letyizogbpeyclzvsagt.supabase.co/functions/v1/generate-insurance-report-v2',
           {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`
+              'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxldHlpem9nYnBleWNsenZzYWd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc2ODI4ODcsImV4cCI6MjA3MzI1ODg4N30.ONtaKjzbr-HkqnU8w4G13g_V77e14sfzTwaAnHjsX-U`
             },
             body: JSON.stringify(reportData)
           }
@@ -194,8 +195,8 @@ const InsuranceHome = () => {
 
         if (!response.ok) throw new Error('Failed to generate report');
 
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
+        const pdfBlob = await response.blob();
+        const url = window.URL.createObjectURL(pdfBlob);
         const a = document.createElement('a');
         a.href = url;
         a.download = `Home_Insurance_Risk_Report_${Date.now()}.pdf`;

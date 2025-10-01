@@ -41,9 +41,9 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
     : 0;
 
   const getScoreColor = (score: number) => {
-    if (score >= 0.8) return 'text-green-600';
-    if (score >= 0.6) return 'text-yellow-600';
-    return 'text-red-600';
+    if (score >= 0.8) return 'text-primary';
+    if (score >= 0.6) return 'text-accent-foreground';
+    return 'text-destructive';
   };
 
   const getScoreLabel = (score: number) => {
@@ -57,11 +57,11 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
     <div className="space-y-6">
       {/* Overview Card */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-forest-primary" />
-            Analysis Summary
-          </CardTitle>
+         <CardHeader>
+           <CardTitle className="flex items-center gap-2">
+             <BarChart3 className="w-5 h-5 text-primary" />
+             Analysis Summary
+           </CardTitle>
           <CardDescription>
             {projectType} suitability analysis results
           </CardDescription>
@@ -101,12 +101,12 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
       </Card>
 
       {/* Criteria Breakdown */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-forest-primary" />
-            Criteria Breakdown
-          </CardTitle>
+       <Card>
+         <CardHeader>
+           <CardTitle className="flex items-center gap-2">
+             <TrendingUp className="w-5 h-5 text-primary" />
+             Criteria Breakdown
+           </CardTitle>
           <CardDescription>
             How each factor influenced the suitability scores
           </CardDescription>
@@ -127,12 +127,12 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
       </Card>
 
       {/* Top 5 Sites */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-forest-primary" />
-            Top 5 Recommended Sites
-          </CardTitle>
+       <Card>
+         <CardHeader>
+           <CardTitle className="flex items-center gap-2">
+             <MapPin className="w-5 h-5 text-primary" />
+             Top 5 Recommended Sites
+           </CardTitle>
           <CardDescription>
             Best locations ranked by {projectType.toLowerCase()} suitability score
           </CardDescription>
@@ -142,21 +142,21 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
             const rank = index + 1;
             const isTopSite = rank <= 3;
             return (
-              <div key={site.id} className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all ${
-                isTopSite 
-                  ? 'bg-green-50 border-green-200 shadow-sm' 
-                  : 'bg-muted/30 border-border'
-              }`}>
-            <div className="flex items-center gap-3">
-              <div className={`flex items-center justify-center w-12 h-12 rounded-full text-sm font-bold shadow-lg ${
-                rank === 1 
-                  ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-white' 
-                  : rank === 2 
-                    ? 'bg-gradient-to-br from-gray-300 to-gray-500 text-white'
-                    : rank === 3
-                      ? 'bg-gradient-to-br from-orange-400 to-orange-600 text-white'
-                      : 'bg-gradient-to-br from-forest-primary to-forest-primary/80 text-white'
-              }`}>
+               <div key={site.id} className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all ${
+                 isTopSite 
+                   ? 'bg-primary/10 border-primary shadow-sm' 
+                   : 'bg-muted/30 border-border'
+               }`}>
+             <div className="flex items-center gap-3">
+               <div className={`flex items-center justify-center w-12 h-12 rounded-full text-sm font-bold shadow-lg ${
+                 rank === 1 
+                   ? 'bg-gradient-to-br from-primary to-primary/80 text-primary-foreground' 
+                   : rank === 2 
+                     ? 'bg-gradient-to-br from-accent to-accent/80 text-accent-foreground'
+                     : rank === 3
+                       ? 'bg-gradient-to-br from-secondary to-secondary/80 text-secondary-foreground'
+                       : 'bg-gradient-to-br from-muted to-muted/80 text-muted-foreground'
+               }`}>
                 {rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`}
               </div>
               <div>
@@ -192,12 +192,12 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
       </Card>
 
       {/* Download Options */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Download className="w-5 h-5 text-forest-primary" />
-            Export Results
-          </CardTitle>
+       <Card>
+         <CardHeader>
+           <CardTitle className="flex items-center gap-2">
+             <Download className="w-5 h-5 text-primary" />
+             Export Results
+           </CardTitle>
           <CardDescription>
             Download your analysis results in different formats
           </CardDescription>

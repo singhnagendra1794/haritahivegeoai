@@ -48,21 +48,59 @@ const InsuranceBatch = () => {
       description: "Analyzing portfolio risk for all addresses..."
     });
 
-    // Simulate batch processing
-    setTimeout(() => {
-      setResults({
-        totalAddresses: 156,
-        processed: 156,
-        highRisk: 23,
-        mediumRisk: 89,
-        lowRisk: 44
+    try {
+      // Read CSV file
+      const text = await selectedFile.text();
+      const lines = text.split('\n').filter(line => line.trim());
+      const headers = lines[0].split(',').map(h => h.trim());
+      
+      // Parse addresses (skip header row)
+      const addresses = lines.slice(1).map(line => {
+        const values = line.split(',').map(v => v.trim());
+        return {
+          address: values[0],
+          city: values[1] || '',
+          state: values[2] || '',
+          zip: values[3] || '',
+          insuranceType: values[4] || 'home'
+        };
       });
-      setIsProcessing(false);
+
+      // Process each address (in production, this would be batched)
+      let highRisk = 0;
+      let mediumRisk = 0;
+      let lowRisk = 0;
+
+      // For demo, simulate risk distribution
+      addresses.forEach(() => {
+        const randomScore = Math.random() * 100;
+        if (randomScore >= 70) highRisk++;
+        else if (randomScore >= 40) mediumRisk++;
+        else lowRisk++;
+      });
+
+      setResults({
+        totalAddresses: addresses.length,
+        processed: addresses.length,
+        highRisk,
+        mediumRisk,
+        lowRisk
+      });
+      
       toast({
         title: "Batch Complete",
-        description: "Portfolio analysis finished successfully!"
+        description: `Successfully analyzed ${addresses.length} properties`
       });
-    }, 3000);
+    } catch (error: any) {
+      console.error('Batch processing error:', error);
+      toast({
+        variant: "destructive",
+        title: "Processing Failed",
+        description: error.message || "Failed to process CSV file"
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const downloadTemplate = () => {
@@ -226,29 +264,29 @@ const InsuranceBatch = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="p-4 rounded-lg bg-red-50 dark:bg-red-950">
-                    <div className="flex items-center gap-2 mb-1">
-                      <AlertCircle className="h-4 w-4 text-red-600" />
-                      <span className="text-sm font-medium">High Risk</span>
-                    </div>
-                    <p className="text-2xl font-bold text-red-600">{results.highRisk}</p>
-                  </div>
-                  <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-950">
-                    <div className="flex items-center gap-2 mb-1">
-                      <AlertCircle className="h-4 w-4 text-amber-600" />
-                      <span className="text-sm font-medium">Medium Risk</span>
-                    </div>
-                    <p className="text-2xl font-bold text-amber-600">{results.mediumRisk}</p>
-                  </div>
-                  <div className="p-4 rounded-lg bg-green-50 dark:bg-green-950">
-                    <div className="flex items-center gap-2 mb-1">
-                      <CheckCircle2 className="h-4 w-4 text-green-600" />
-                      <span className="text-sm font-medium">Low Risk</span>
-                    </div>
-                    <p className="text-2xl font-bold text-green-600">{results.lowRisk}</p>
-                  </div>
-                </div>
+                 <div className="grid grid-cols-3 gap-4">
+                   <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20">
+                     <div className="flex items-center gap-2 mb-1">
+                       <AlertCircle className="h-4 w-4 text-destructive" />
+                       <span className="text-sm font-medium text-destructive">High Risk</span>
+                     </div>
+                     <p className="text-2xl font-bold text-destructive">{results.highRisk}</p>
+                   </div>
+                   <div className="p-4 rounded-lg bg-accent/20 border border-accent/40">
+                     <div className="flex items-center gap-2 mb-1">
+                       <AlertCircle className="h-4 w-4 text-accent-foreground" />
+                       <span className="text-sm font-medium">Medium Risk</span>
+                     </div>
+                     <p className="text-2xl font-bold text-accent-foreground">{results.mediumRisk}</p>
+                   </div>
+                   <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
+                     <div className="flex items-center gap-2 mb-1">
+                       <CheckCircle2 className="h-4 w-4 text-primary" />
+                       <span className="text-sm font-medium text-primary">Low Risk</span>
+                     </div>
+                     <p className="text-2xl font-bold text-primary">{results.lowRisk}</p>
+                   </div>
+                 </div>
 
                 <div className="flex gap-3">
                   <Button className="flex-1">

@@ -14,8 +14,8 @@ const InsuranceLanding = () => {
       description: 'Analyze property risk factors for mortgage underwriting including flood zones, wildfire risk, and infrastructure access.',
       icon: Building2,
       route: '/insurance/mortgage',
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50 dark:bg-blue-950',
+      color: 'text-primary',
+      bgColor: 'bg-primary/10',
       factors: ['Flood Zone', 'Wildfire Risk', 'Slope/Elevation', 'Infrastructure']
     },
     {
@@ -24,8 +24,8 @@ const InsuranceLanding = () => {
       description: 'Comprehensive home insurance risk assessment covering structure condition, natural hazards, and emergency access.',
       icon: Home,
       route: '/insurance/home',
-      color: 'text-green-600',
-      bgColor: 'bg-green-50 dark:bg-green-950',
+      color: 'text-primary',
+      bgColor: 'bg-primary/10',
       factors: ['Structure/Roof', 'Flood Risk', 'Wildfire Risk', 'Road Access']
     },
     {
@@ -34,8 +34,8 @@ const InsuranceLanding = () => {
       description: 'Evaluate vehicle insurance risks based on road density, traffic patterns, environmental hazards, and terrain.',
       icon: Car,
       route: '/insurance/vehicle',
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50 dark:bg-purple-950',
+      color: 'text-primary',
+      bgColor: 'bg-primary/10',
       factors: ['Road Density', 'Flood Risk', 'Crime Proxy', 'Terrain Hazard']
     }
   ];
@@ -119,8 +119,8 @@ const InsuranceLanding = () => {
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-lg bg-orange-50 dark:bg-orange-950 flex items-center justify-center">
-                    <Upload className="h-6 w-6 text-orange-600" />
+                 <div className="w-12 h-12 rounded-lg bg-accent flex items-center justify-center">
+                    <Upload className="h-6 w-6 text-accent-foreground" />
                   </div>
                   <div>
                     <CardTitle>Batch Analysis Mode</CardTitle>
@@ -137,18 +137,18 @@ const InsuranceLanding = () => {
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="bg-green-50 dark:bg-green-950">
-                    Portfolio Analysis
-                  </Badge>
-                  <span>Analyze 100+ properties at once</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="bg-blue-50 dark:bg-blue-950">
-                    Bulk Export
-                  </Badge>
-                  <span>CSV + PDF reports</span>
-                </div>
+                 <div className="flex items-center gap-2">
+                   <Badge variant="outline">
+                     Portfolio Analysis
+                   </Badge>
+                   <span>Analyze 100+ properties at once</span>
+                 </div>
+                 <div className="flex items-center gap-2">
+                   <Badge variant="outline">
+                     Bulk Export
+                   </Badge>
+                   <span>CSV + PDF reports</span>
+                 </div>
               </div>
             </CardContent>
           </Card>
