@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -18,11 +18,15 @@ import {
   FileText,
   ChevronDown,
   Search,
-  Zap
+  Zap,
+  Shield,
+  AlertCircle
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import logoImage from '@/assets/logo.jpg';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line } from 'recharts';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
 
 interface PropertyDamage {
   id: string;
@@ -33,6 +37,8 @@ interface PropertyDamage {
   demolitionCost: number;
   priority: 'low' | 'medium' | 'high' | 'critical';
   coordinates: [number, number];
+  fraudFlag?: boolean;
+  fraudReason?: string;
 }
 
 const InsuranceClaimsDashboard = () => {
@@ -40,9 +46,33 @@ const InsuranceClaimsDashboard = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [disasterType, setDisasterType] = useState('');
   const [location, setLocation] = useState('');
+  const [propertyAddress, setPropertyAddress] = useState('');
   const [disasterDate, setDisasterDate] = useState(new Date().toISOString().split('T')[0]);
   const [analysisResults, setAnalysisResults] = useState<PropertyDamage[] | null>(null);
   const [selectedProperty, setSelectedProperty] = useState<PropertyDamage | null>(null);
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const map = useRef<mapboxgl.Map | null>(null);
+  const [mapboxToken, setMapboxToken] = useState('');
+
+  // Fraud detection logic
+  const detectFraud = (property: PropertyDamage, disasterType: string): { flag: boolean; reason?: string } => {
+    // Flood on high ground detection
+    if (disasterType === 'flood' && property.damagePercentage > 50 && property.coordinates[1] > 36) {
+      return { flag: true, reason: 'High flood damage on elevated terrain' };
+    }
+    
+    // Suspicious high damage in low-severity areas
+    if (property.severity === 'none' && property.damagePercentage > 30) {
+      return { flag: true, reason: 'High damage claim in unaffected area' };
+    }
+    
+    // Unusually high reconstruction costs
+    if (property.reconstructionCost > 500000 && property.severity === 'minor') {
+      return { flag: true, reason: 'Excessive claim amount for minor damage' };
+    }
+    
+    return { flag: false };
+  };
 
   const runAnalysis = async () => {
     if (!disasterType || !location) {
@@ -75,10 +105,11 @@ const InsuranceClaimsDashboard = () => {
 
       if (disasterError) throw disasterError;
 
-      // Generate mock portfolio data with AI-powered analysis
+      // Generate mock portfolio data with AI-powered analysis and fraud detection
       const mockPortfolio: PropertyDamage[] = await Promise.all(
         Array.from({ length: 15 }, async (_, i) => {
-          const address = `${100 + i * 10} ${['Main St', 'Oak Ave', 'Pine Rd', 'Cedar Ln'][i % 4]}, ${location}`;
+          const baseAddress = propertyAddress || `${100 + i * 10} ${['Main St', 'Oak Ave', 'Pine Rd', 'Cedar Ln'][i % 4]}`;
+          const address = `${baseAddress}, ${location}`;
           
           // Call AI damage analysis
           const { data: aiResult, error: aiError } = await supabase.functions.invoke('change-detection', {
@@ -105,6 +136,11 @@ const InsuranceClaimsDashboard = () => {
               35 + Math.random() * 5
             ] as [number, number]
           };
+
+          // Run fraud detection
+          const fraudCheck = detectFraud(property, disasterType);
+          property.fraudFlag = fraudCheck.flag;
+          property.fraudReason = fraudCheck.reason;
 
           // Save to database
           await supabase.from('property_damage_assessments').insert({
@@ -142,9 +178,15 @@ const InsuranceClaimsDashboard = () => {
 
       setAnalysisResults(mockPortfolio);
       
+      // Initialize map with results
+      if (mapboxToken && mapContainer.current) {
+        initializeMap(mockPortfolio);
+      }
+      
+      const fraudCount = mockPortfolio.filter(p => p.fraudFlag).length;
       toast({
         title: "✅ Analysis Complete",
-        description: `${mockPortfolio.length} properties analyzed. Claims ready for processing.`
+        description: `${mockPortfolio.length} properties analyzed. ${fraudCount} fraud alerts detected.`
       });
     } catch (error: any) {
       console.error('Analysis error:', error);
@@ -157,6 +199,68 @@ const InsuranceClaimsDashboard = () => {
       setIsAnalyzing(false);
     }
   };
+
+  // Initialize Mapbox map
+  const initializeMap = (properties: PropertyDamage[]) => {
+    if (!mapContainer.current || !mapboxToken) return;
+
+    mapboxgl.accessToken = mapboxToken;
+    
+    if (map.current) {
+      map.current.remove();
+    }
+
+    const avgLng = properties.reduce((sum, p) => sum + p.coordinates[0], 0) / properties.length;
+    const avgLat = properties.reduce((sum, p) => sum + p.coordinates[1], 0) / properties.length;
+
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: 'mapbox://styles/mapbox/light-v11',
+      center: [avgLng, avgLat],
+      zoom: 11
+    });
+
+    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+    // Add markers for each property
+    properties.forEach((property) => {
+      const color = property.fraudFlag ? '#dc2626' : 
+                    property.severity === 'total' ? '#991b1b' :
+                    property.severity === 'severe' ? '#ef4444' :
+                    property.severity === 'moderate' ? '#f97316' :
+                    property.severity === 'minor' ? '#eab308' : '#22c55e';
+
+      const el = document.createElement('div');
+      el.className = 'w-6 h-6 rounded-full border-2 border-white shadow-lg cursor-pointer';
+      el.style.backgroundColor = color;
+      
+      if (property.fraudFlag) {
+        el.innerHTML = '<div class="w-full h-full flex items-center justify-center text-white text-xs">⚠</div>';
+      }
+
+      new mapboxgl.Marker(el)
+        .setLngLat(property.coordinates)
+        .setPopup(
+          new mapboxgl.Popup({ offset: 25 })
+            .setHTML(
+              `<div class="p-2">
+                <p class="font-semibold">${property.address}</p>
+                <p class="text-sm">Severity: ${property.severity}</p>
+                <p class="text-sm">Damage: ${property.damagePercentage}%</p>
+                <p class="text-sm">Cost: $${(property.reconstructionCost / 1000).toFixed(0)}K</p>
+                ${property.fraudFlag ? `<p class="text-sm text-red-600 font-semibold mt-1">⚠ Fraud Alert</p>` : ''}
+              </div>`
+            )
+        )
+        .addTo(map.current!);
+    });
+  };
+
+  useEffect(() => {
+    if (analysisResults && mapboxToken && mapContainer.current) {
+      initializeMap(analysisResults);
+    }
+  }, [analysisResults, mapboxToken]);
 
   const handleExport = (format: 'pdf' | 'excel') => {
     toast({
@@ -191,6 +295,7 @@ const InsuranceClaimsDashboard = () => {
   const totalClaims = analysisResults ? analysisResults.reduce((sum, p) => sum + p.reconstructionCost + p.demolitionCost, 0) : 0;
   const avgClaimCost = analysisResults ? totalClaims / analysisResults.length : 0;
   const criticalProperties = analysisResults ? analysisResults.filter(p => p.priority === 'critical').length : 0;
+  const fraudAlerts = analysisResults ? analysisResults.filter(p => p.fraudFlag).length : 0;
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
@@ -222,8 +327,8 @@ const InsuranceClaimsDashboard = () => {
             <div className="flex items-center gap-3">
               <img src={logoImage} alt="Harita Hive" className="h-10 w-10 rounded-lg" />
               <div>
-                <h1 className="text-xl font-bold text-foreground">AI Claims Intelligence Platform</h1>
-                <p className="text-xs text-muted-foreground">Automated post-disaster damage assessment & claims processing</p>
+                <h1 className="text-xl font-bold text-foreground">GeoAI Claims Intelligence Platform</h1>
+                <p className="text-xs text-muted-foreground">AI-powered damage assessment, fraud detection & claims processing</p>
               </div>
             </div>
             <div className="flex gap-2">
@@ -231,6 +336,12 @@ const InsuranceClaimsDashboard = () => {
                 <Zap className="h-3 w-3" />
                 AI-Powered
               </Badge>
+              {fraudAlerts > 0 && (
+                <Badge variant="destructive" className="flex items-center gap-2">
+                  <Shield className="h-3 w-3" />
+                  {fraudAlerts} Fraud Alerts
+                </Badge>
+              )}
             </div>
           </div>
         </div>
@@ -248,6 +359,19 @@ const InsuranceClaimsDashboard = () => {
               </div>
               
               <div className="space-y-4">
+                <div>
+                  <Label>Mapbox Token (Required for Map)</Label>
+                  <Input
+                    type="password"
+                    placeholder="Enter your Mapbox token"
+                    value={mapboxToken}
+                    onChange={(e) => setMapboxToken(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Get your token at <a href="https://mapbox.com" target="_blank" rel="noopener noreferrer" className="underline">mapbox.com</a>
+                  </p>
+                </div>
+
                 <div>
                   <Label>Disaster Type *</Label>
                   <Select value={disasterType} onValueChange={setDisasterType}>
@@ -272,6 +396,19 @@ const InsuranceClaimsDashboard = () => {
                       placeholder="Enter city, county, or ZIP code"
                       value={location}
                       onChange={(e) => setLocation(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label>Property Address (Optional)</Label>
+                  <div className="relative">
+                    <Home className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Enter specific property address"
+                      value={propertyAddress}
+                      onChange={(e) => setPropertyAddress(e.target.value)}
                       className="pl-10"
                     />
                   </div>
@@ -332,6 +469,15 @@ const InsuranceClaimsDashboard = () => {
                     <span className="text-sm text-muted-foreground">Critical Priority</span>
                     <Badge variant="destructive">{criticalProperties}</Badge>
                   </div>
+                  {fraudAlerts > 0 && (
+                    <div className="flex justify-between items-center pt-2 border-t">
+                      <span className="text-sm text-muted-foreground">Fraud Alerts</span>
+                      <Badge variant="destructive" className="flex items-center gap-1">
+                        <Shield className="h-3 w-3" />
+                        {fraudAlerts}
+                      </Badge>
+                    </div>
+                  )}
                 </div>
               </Card>
             )}
@@ -362,8 +508,42 @@ const InsuranceClaimsDashboard = () => {
             )}
           </div>
 
-          {/* Right Panel - Visualizations & Results */}
+          {/* Right Panel - Map & Visualizations */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Interactive Map */}
+            {analysisResults && mapboxToken && (
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold mb-4">Interactive Damage Map</h3>
+                <div ref={mapContainer} className="w-full h-96 rounded-lg" />
+                <div className="flex gap-4 mt-4 text-xs">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                    <span>None</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                    <span>Minor</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-orange-500"></div>
+                    <span>Moderate</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                    <span>Severe</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-red-900"></div>
+                    <span>Total Loss</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-red-600 flex items-center justify-center text-white">⚠</div>
+                    <span>Fraud Alert</span>
+                  </div>
+                </div>
+              </Card>
+            )}
+
             {!analysisResults ? (
               <Card className="p-12 text-center">
                 <div className="max-w-md mx-auto">
@@ -436,6 +616,36 @@ const InsuranceClaimsDashboard = () => {
                   </ResponsiveContainer>
                 </Card>
 
+                {/* Fraud Alerts */}
+                {fraudAlerts > 0 && (
+                  <Card className="p-6 border-destructive">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Shield className="h-5 w-5 text-destructive" />
+                      <h3 className="text-lg font-semibold text-destructive">Fraud Alerts ({fraudAlerts})</h3>
+                    </div>
+                    <div className="space-y-2">
+                      {analysisResults
+                        .filter(p => p.fraudFlag)
+                        .map((property) => (
+                          <div key={property.id} className="p-4 border border-destructive rounded-lg bg-destructive/5">
+                            <div className="flex items-start gap-3">
+                              <AlertCircle className="h-5 w-5 text-destructive mt-0.5" />
+                              <div className="flex-1">
+                                <p className="font-medium text-sm mb-1">{property.address}</p>
+                                <p className="text-xs text-muted-foreground mb-2">{property.fraudReason}</p>
+                                <div className="flex items-center gap-4 text-xs">
+                                  <span>Severity: <span className={getSeverityColor(property.severity)}>{property.severity}</span></span>
+                                  <span>Damage: {property.damagePercentage}%</span>
+                                  <span>Claim: ${(property.reconstructionCost / 1000).toFixed(0)}K</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </Card>
+                )}
+
                 {/* Priority Properties Table */}
                 <Card className="p-6">
                   <div className="flex items-center justify-between mb-4">
@@ -459,6 +669,12 @@ const InsuranceClaimsDashboard = () => {
                                 <Badge className={getPriorityColor(property.priority)} variant="secondary">
                                   {property.priority.toUpperCase()}
                                 </Badge>
+                                {property.fraudFlag && (
+                                  <Badge variant="destructive" className="flex items-center gap-1">
+                                    <Shield className="h-3 w-3" />
+                                    FRAUD
+                                  </Badge>
+                                )}
                               </div>
                               <div className="flex items-center gap-4 text-xs text-muted-foreground">
                                 <span>Damage: <span className={getSeverityColor(property.severity)}>{property.severity}</span></span>
