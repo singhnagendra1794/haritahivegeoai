@@ -41,6 +41,9 @@ interface DamageAssessment {
     water_damage: number;
     vegetation_loss: number;
   };
+  ai_insights?: string;
+  ai_full_analysis?: string;
+  data_sources_used?: string[];
   visualization_url?: string;
   before_image_url?: string;
   after_image_url?: string;
@@ -91,8 +94,8 @@ const InsurancePostDisaster = () => {
 
     setIsAnalyzing(true);
     toast({
-      title: "Damage Assessment Starting",
-      description: "Analyzing property damage from satellite imagery..."
+      title: "🤖 AI Analysis Starting",
+      description: "Gathering data from FEMA, NOAA, USGS, satellite imagery... AI analyzing damage..."
     });
 
     try {
@@ -121,8 +124,8 @@ const InsurancePostDisaster = () => {
       setCurrentStep('results');
       
       toast({
-        title: "Assessment Complete",
-        description: "Property damage analysis generated successfully!"
+        title: "✅ AI Analysis Complete",
+        description: "Claim-ready damage assessment with cost estimates generated!"
       });
     } catch (error: any) {
       console.error('Analysis error:', error);
@@ -182,8 +185,8 @@ const InsurancePostDisaster = () => {
               <div className="flex items-center gap-3">
                 <img src={logoImage} alt="Harita Hive" className="h-10 w-10 rounded-lg" />
                 <div>
-                  <h1 className="text-xl font-bold text-foreground">Post-Disaster Damage Assessment</h1>
-                  <p className="text-xs text-muted-foreground">Rapid damage analysis & claims intelligence</p>
+                  <h1 className="text-xl font-bold text-foreground">AI-Powered Disaster Claims Intelligence</h1>
+                  <p className="text-xs text-muted-foreground">Automated damage assessment • Just input disaster & location</p>
                 </div>
               </div>
             </div>
@@ -398,9 +401,29 @@ const InsurancePostDisaster = () => {
                   </div>
                 </Card>
 
+                {/* AI Insights Card */}
+                {analysisResult.assessment.ai_insights && (
+                  <Card className="p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Badge variant="secondary">🤖 AI-Powered Analysis</Badge>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="p-4 bg-muted rounded-lg">
+                        <p className="text-sm whitespace-pre-line">{analysisResult.assessment.ai_insights}</p>
+                      </div>
+                      {analysisResult.assessment.data_sources_used && (
+                        <div className="text-xs text-muted-foreground">
+                          <p className="font-medium mb-1">Data Sources:</p>
+                          <p>{analysisResult.assessment.data_sources_used.join(', ')}</p>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                )}
+
                 {/* Recommendations Card */}
                 <Card className="p-6">
-                  <h2 className="text-lg font-semibold mb-4">Recommended Action</h2>
+                  <h2 className="text-lg font-semibold mb-4">Claims Processing Action</h2>
                   <div className="p-4 bg-muted rounded-lg">
                     <p className="text-sm">{analysisResult.assessment.recommended_action}</p>
                   </div>

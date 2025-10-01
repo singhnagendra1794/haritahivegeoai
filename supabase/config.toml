@@ -6,6 +6,9 @@ verify_jwt = false
 [functions.change-detection]
 verify_jwt = false
 
+[env]
+LOVABLE_API_KEY = "env(LOVABLE_API_KEY)"
+
 [functions.ingest-vector]
 verify_jwt = false
 
