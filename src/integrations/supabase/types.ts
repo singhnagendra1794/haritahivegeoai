@@ -82,6 +82,63 @@ export type Database = {
         }
         Relationships: []
       }
+      disaster_analyses: {
+        Row: {
+          ai_summary: string | null
+          analysis_status: string
+          baseline_date: string
+          coordinates: Json | null
+          created_at: string
+          created_by: string | null
+          critical_properties: number | null
+          data_sources: Json | null
+          disaster_date: string
+          disaster_type: string
+          id: string
+          location: string
+          session_id: string | null
+          total_estimated_claims: number | null
+          total_properties_analyzed: number | null
+          updated_at: string
+        }
+        Insert: {
+          ai_summary?: string | null
+          analysis_status?: string
+          baseline_date?: string
+          coordinates?: Json | null
+          created_at?: string
+          created_by?: string | null
+          critical_properties?: number | null
+          data_sources?: Json | null
+          disaster_date: string
+          disaster_type: string
+          id?: string
+          location: string
+          session_id?: string | null
+          total_estimated_claims?: number | null
+          total_properties_analyzed?: number | null
+          updated_at?: string
+        }
+        Update: {
+          ai_summary?: string | null
+          analysis_status?: string
+          baseline_date?: string
+          coordinates?: Json | null
+          created_at?: string
+          created_by?: string | null
+          critical_properties?: number | null
+          data_sources?: Json | null
+          disaster_date?: string
+          disaster_type?: string
+          id?: string
+          location?: string
+          session_id?: string | null
+          total_estimated_claims?: number | null
+          total_properties_analyzed?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       geo_features: {
         Row: {
           auth_user_id: string | null
@@ -491,6 +548,77 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_damage_assessments: {
+        Row: {
+          address: string
+          after_image_url: string | null
+          ai_insights: string | null
+          before_image_url: string | null
+          claims_priority: string
+          coordinates: Json | null
+          created_at: string
+          damage_details: Json | null
+          damage_percentage: number | null
+          damage_severity: string
+          demolition_cost: number | null
+          demolition_required: boolean | null
+          disaster_analysis_id: string | null
+          id: string
+          recommended_action: string | null
+          reconstruction_cost: number
+          updated_at: string
+          visualization_url: string | null
+        }
+        Insert: {
+          address: string
+          after_image_url?: string | null
+          ai_insights?: string | null
+          before_image_url?: string | null
+          claims_priority: string
+          coordinates?: Json | null
+          created_at?: string
+          damage_details?: Json | null
+          damage_percentage?: number | null
+          damage_severity: string
+          demolition_cost?: number | null
+          demolition_required?: boolean | null
+          disaster_analysis_id?: string | null
+          id?: string
+          recommended_action?: string | null
+          reconstruction_cost?: number
+          updated_at?: string
+          visualization_url?: string | null
+        }
+        Update: {
+          address?: string
+          after_image_url?: string | null
+          ai_insights?: string | null
+          before_image_url?: string | null
+          claims_priority?: string
+          coordinates?: Json | null
+          created_at?: string
+          damage_details?: Json | null
+          damage_percentage?: number | null
+          damage_severity?: string
+          demolition_cost?: number | null
+          demolition_required?: boolean | null
+          disaster_analysis_id?: string | null
+          id?: string
+          recommended_action?: string | null
+          reconstruction_cost?: number
+          updated_at?: string
+          visualization_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_damage_assessments_disaster_analysis_id_fkey"
+            columns: ["disaster_analysis_id"]
+            isOneToOne: false
+            referencedRelation: "disaster_analyses"
             referencedColumns: ["id"]
           },
         ]
@@ -1351,7 +1479,7 @@ export type Database = {
         Args:
           | { tbl_oid: unknown; use_typmod?: boolean }
           | { use_typmod?: boolean }
-        Returns: number
+        Returns: string
       }
       postgis_addbbox: {
         Args: { "": unknown }
