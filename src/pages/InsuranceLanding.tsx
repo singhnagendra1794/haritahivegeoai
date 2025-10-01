@@ -3,10 +3,13 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Home, Car, Building2, Upload, ArrowLeft, Shield } from 'lucide-react';
+import { Home, Car, Building2, Upload, ArrowLeft, Shield, AlertTriangle, BarChart3, Settings } from 'lucide-react';
 import logoImage from '@/assets/logo.jpg';
+import { useNavigate } from 'react-router-dom';
 
 const InsuranceLanding = () => {
+  const navigate = useNavigate();
+  
   const insuranceModules = [
     {
       id: 'mortgage',
@@ -60,10 +63,35 @@ const InsuranceLanding = () => {
                 </div>
               </div>
             </div>
-            <Badge variant="outline" className="hidden md:flex items-center gap-2">
-              <Shield className="h-3 w-3" />
-              Risk Analytics Platform
-            </Badge>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+                onClick={() => navigate('/insurance/triage')}
+              >
+                <AlertTriangle className="h-4 w-4" />
+                Claims Triage
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+                onClick={() => navigate('/insurance/portfolio')}
+              >
+                <BarChart3 className="h-4 w-4" />
+                Portfolio
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+                onClick={() => navigate('/insurance/admin')}
+              >
+                <Settings className="h-4 w-4" />
+                Admin
+              </Button>
+            </div>
           </div>
         </div>
       </header>

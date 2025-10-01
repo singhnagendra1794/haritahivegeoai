@@ -23,6 +23,9 @@ import InsuranceBatch from './pages/InsuranceBatch';
 import InsuranceEmptyPlot from "./pages/InsuranceEmptyPlot";
 import InsuranceHomeReady from "./pages/InsuranceHomeReady";
 import InsurancePostDisaster from "./pages/InsurancePostDisaster";
+import InsuranceTriage from "./pages/InsuranceTriage";
+import InsurancePortfolio from "./pages/InsurancePortfolio";
+import InsuranceAdmin from "./pages/InsuranceAdmin";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +45,9 @@ const App = () => (
           <Route path="/insurance/home" element={<InsuranceHome />} />
           <Route path="/insurance/vehicle" element={<InsuranceVehicle />} />
           <Route path="/insurance/batch" element={<InsuranceBatch />} />
+          <Route path="/insurance/triage" element={<InsuranceTriage />} />
+          <Route path="/insurance/portfolio" element={<InsurancePortfolio />} />
+          <Route path="/insurance/admin" element={<InsuranceAdmin />} />
           
           {/* Legacy Insurance Routes (kept for backwards compatibility) */}
           <Route path="/insurance/empty-plot" element={<InsuranceEmptyPlot />} />

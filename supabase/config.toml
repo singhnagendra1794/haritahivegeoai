@@ -1,5 +1,11 @@
 project_id = "letyizogbpeyclzvsagt"
 
+[functions.insurance-risk-api]
+verify_jwt = false
+
+[functions.change-detection]
+verify_jwt = false
+
 [functions.ingest-vector]
 verify_jwt = false
 
