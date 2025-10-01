@@ -28,8 +28,8 @@ interface Region {
 }
 
 interface SuitabilityMapProps {
-  result: AnalysisResult;
-  region: Region;
+  result?: AnalysisResult | null;
+  region?: Region | null;
 }
 
 export const SuitabilityMap: React.FC<SuitabilityMapProps> = ({ result, region }) => {
@@ -46,7 +46,7 @@ export const SuitabilityMap: React.FC<SuitabilityMapProps> = ({ result, region }
     }
   });
   useEffect(() => {
-    if (!mapContainer.current) return;
+    if (!mapContainer.current || !region || !result) return;
 
     if (!token) {
       if (mapContainer.current) mapContainer.current.innerHTML = '';
@@ -216,6 +216,28 @@ export const SuitabilityMap: React.FC<SuitabilityMapProps> = ({ result, region }
       map.current?.remove();
     };
   }, [result, region, token]);
+
+  // Show placeholder when no data is available yet
+  if (!region || !result) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MapPin className="w-5 h-5 text-forest-primary" />
+            Map Visualization
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-96 rounded-lg overflow-hidden border border-border bg-muted/20 flex items-center justify-center">
+            <div className="text-center text-muted-foreground">
+              <MapPin className="w-12 h-12 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">Select a location and run analysis to view results</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
