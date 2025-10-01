@@ -46,6 +46,17 @@ interface AnalysisResult {
     address?: string;
   }>;
   breakdown: Record<string, number>;
+  analysisDetails?: {
+    overallRiskScore: number;
+    factorBreakdown: Array<{
+      name: string;
+      score: number;
+      weight: number;
+      explanation: string;
+      metadata: any;
+    }>;
+    dataLayers: Record<string, any>;
+  };
 }
 
 const InsuranceHome = () => {
@@ -79,33 +90,46 @@ const InsuranceHome = () => {
     setIsAnalyzing(true);
     toast({
       title: "Analysis Starting",
-      description: "Running home insurance risk analysis..."
+      description: "Running comprehensive home insurance risk analysis with real geospatial data..."
     });
 
     try {
       const sessionId = crypto.randomUUID();
       
-      const { data: result, error } = await supabase.functions.invoke('insurance-risk-analysis', {
+      // Call the comprehensive analysis function
+      const { data: analysisResult, error: analysisError } = await supabase.functions.invoke('analyze-insurance-risk', {
         body: {
           insuranceType: 'home',
-          weights: analysisConfig.factors.weights,
-          selectedFactors: analysisConfig.factors.selectedFactors,
-          region: {
-            center: analysisConfig.region.data.center,
-            bufferRadius: analysisConfig.region.data.radius,
-            address: analysisConfig.region.data.address
+          location: {
+            address: analysisConfig.region.data.address,
+            coordinates: analysisConfig.region.data.center
           },
-          sessionId: sessionId,
+          bufferRadius: analysisConfig.region.data.radius,
+          selectedFactors: analysisConfig.factors.selectedFactors,
+          weights: analysisConfig.factors.weights
         }
       });
 
-      if (error) throw error;
-      setAnalysisResult(result);
+      if (analysisError) throw analysisError;
+
+      // Transform analysis results for display
+      const transformedResult = {
+        projectId: sessionId,
+        suitabilityData: analysisResult.dataLayers,
+        topSites: analysisResult.topSites,
+        breakdown: analysisResult.factorBreakdown.reduce((acc: Record<string, number>, f: any) => {
+          acc[f.name] = f.score;
+          return acc;
+        }, {}),
+        analysisDetails: analysisResult
+      };
+
+      setAnalysisResult(transformedResult);
       setCurrentStep('results');
       
       toast({
         title: "Analysis Complete",
-        description: "Home insurance risk assessment generated successfully!"
+        description: `Risk assessment complete: ${analysisResult.overallRiskScore}/100 overall risk score`
       });
     } catch (error: any) {
       console.error('Analysis error:', error);
@@ -138,7 +162,7 @@ const InsuranceHome = () => {
 
       toast({
         title: "Generating Report",
-        description: "Creating your insurance risk PDF report..."
+        description: "Creating production-ready PDF with real geospatial data..."
       });
 
       try {
@@ -149,23 +173,28 @@ const InsuranceHome = () => {
             coordinates: analysisConfig.region.data.center
           },
           bufferRadius: analysisConfig.region.data.radius,
-          riskScore: Math.round(analysisResult.topSites[0]?.score * 100 || 0),
-          factors: analysisConfig.factors.selectedFactors.map(factorId => ({
-            name: factorId.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
-            score: Math.round(analysisConfig.factors!.weights[factorId] || 0),
-            weight: analysisConfig.factors!.weights[factorId] || 0
-          })),
+          overallRiskScore: analysisResult.analysisDetails?.overallRiskScore || 0,
+          factorBreakdown: analysisResult.analysisDetails?.factorBreakdown || [],
           topSites: analysisResult.topSites,
+          dataLayers: analysisResult.analysisDetails?.dataLayers || {},
           isBatch: false
         };
 
-        const { data: pdfBlob, error } = await supabase.functions.invoke('generate-insurance-report', {
-          body: reportData
-        });
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-insurance-report-v2`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`
+            },
+            body: JSON.stringify(reportData)
+          }
+        );
 
-        if (error) throw error;
+        if (!response.ok) throw new Error('Failed to generate report');
 
-        const blob = new Blob([pdfBlob], { type: 'application/pdf' });
+        const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -177,7 +206,7 @@ const InsuranceHome = () => {
 
         toast({
           title: "Report Downloaded",
-          description: "Your insurance risk report has been generated successfully!"
+          description: "Professional risk report with real data analysis downloaded successfully!"
         });
       } catch (error: any) {
         console.error('Download error:', error);
@@ -194,6 +223,7 @@ const InsuranceHome = () => {
       });
     }
   };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">

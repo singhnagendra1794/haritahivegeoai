@@ -39,8 +39,11 @@ verify_jwt = false
 [functions.download-results]
 verify_jwt = false
 
-[functions.insurance-risk-analysis]
+[functions.generate-insurance-report]
 verify_jwt = false
 
-[functions.generate-insurance-report]
+[functions.analyze-insurance-risk]
+verify_jwt = false
+
+[functions.generate-insurance-report-v2]
 verify_jwt = false
