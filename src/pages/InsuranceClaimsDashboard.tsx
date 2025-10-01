@@ -84,10 +84,19 @@ const InsuranceClaimsDashboard = () => {
       return;
     }
 
+    if (!propertyAddress) {
+      toast({
+        variant: "destructive",
+        title: "Property Address Required",
+        description: "Please enter a specific property address to analyze."
+      });
+      return;
+    }
+
     setIsAnalyzing(true);
     toast({
       title: "🤖 AI Analysis Starting",
-      description: "Gathering data from FEMA, NOAA, USGS, satellite sources..."
+      description: "Analyzing property damage with AI-powered geospatial intelligence..."
     });
 
     try {
@@ -96,7 +105,7 @@ const InsuranceClaimsDashboard = () => {
         .from('disaster_analyses')
         .insert({
           disaster_type: disasterType,
-          location: location,
+          location: propertyAddress,
           disaster_date: disasterDate,
           analysis_status: 'processing'
         })
@@ -105,88 +114,85 @@ const InsuranceClaimsDashboard = () => {
 
       if (disasterError) throw disasterError;
 
-      // Generate mock portfolio data with AI-powered analysis and fraud detection
-      const mockPortfolio: PropertyDamage[] = await Promise.all(
-        Array.from({ length: 15 }, async (_, i) => {
-          const baseAddress = propertyAddress || `${100 + i * 10} ${['Main St', 'Oak Ave', 'Pine Rd', 'Cedar Ln'][i % 4]}`;
-          const address = `${baseAddress}, ${location}`;
-          
-          // Call AI damage analysis
-          const { data: aiResult, error: aiError } = await supabase.functions.invoke('change-detection', {
-            body: {
-              address,
-              disaster_type: disasterType,
-              baseline_date: '2024-01-01',
-              current_date: disasterDate,
-              buffer: 1000,
-              analysis_type: 'all'
-            }
-          });
+      // Call AI damage analysis for the specific property
+      const { data: aiResult, error: aiError } = await supabase.functions.invoke('change-detection', {
+        body: {
+          address: propertyAddress,
+          disaster_type: disasterType,
+          baseline_date: '2024-01-01',
+          current_date: disasterDate,
+          buffer: 1000,
+          analysis_type: 'all'
+        }
+      });
 
-          const property: PropertyDamage = {
-            id: `prop-${i + 1}`,
-            address,
-            severity: aiResult?.damage_severity || (['none', 'minor', 'moderate', 'severe', 'total'][Math.floor(Math.random() * 5)] as any),
-            damagePercentage: aiResult?.damage_percentage || Math.floor(Math.random() * 100),
-            reconstructionCost: aiResult?.reconstruction_cost || (Math.floor(Math.random() * 400000) + 50000),
-            demolitionCost: aiResult?.demolition_cost || (Math.random() > 0.7 ? Math.floor(Math.random() * 50000) + 10000 : 0),
-            priority: aiResult?.claims_priority || (['low', 'medium', 'high', 'critical'][Math.floor(Math.random() * 4)] as any),
-            coordinates: [
-              -80 + Math.random() * 10,
-              35 + Math.random() * 5
-            ] as [number, number]
-          };
+      if (aiError) {
+        console.error('AI analysis error:', aiError);
+        throw new Error(aiError.message || 'AI analysis failed');
+      }
 
-          // Run fraud detection
-          const fraudCheck = detectFraud(property, disasterType);
-          property.fraudFlag = fraudCheck.flag;
-          property.fraudReason = fraudCheck.reason;
+      console.log('AI Result:', aiResult);
 
-          // Save to database
-          await supabase.from('property_damage_assessments').insert({
-            disaster_analysis_id: disasterRecord.id,
-            address: property.address,
-            coordinates: { lat: property.coordinates[1], lng: property.coordinates[0] },
-            damage_severity: property.severity,
-            damage_percentage: property.damagePercentage,
-            reconstruction_cost: property.reconstructionCost,
-            demolition_cost: property.demolitionCost,
-            demolition_required: property.demolitionCost > 0,
-            claims_priority: property.priority,
-            recommended_action: aiResult?.recommended_action || 'Schedule inspection',
-            damage_details: aiResult?.damage_details || {},
-            ai_insights: aiResult?.ai_insights || ''
-          });
+      // Extract coordinates from AI result or use default
+      const coordinates: [number, number] = aiResult?.coordinates 
+        ? [aiResult.coordinates.lng, aiResult.coordinates.lat]
+        : [-80, 35];
 
-          return property;
-        })
-      );
+      const property: PropertyDamage = {
+        id: 'prop-1',
+        address: propertyAddress,
+        severity: aiResult?.damage_severity || 'moderate',
+        damagePercentage: aiResult?.damage_percentage || 0,
+        reconstructionCost: aiResult?.reconstruction_cost || 0,
+        demolitionCost: aiResult?.demolition_cost || 0,
+        priority: aiResult?.claims_priority || 'medium',
+        coordinates
+      };
+
+      // Run fraud detection
+      const fraudCheck = detectFraud(property, disasterType);
+      property.fraudFlag = fraudCheck.flag;
+      property.fraudReason = fraudCheck.reason;
+
+      // Save to database
+      await supabase.from('property_damage_assessments').insert({
+        disaster_analysis_id: disasterRecord.id,
+        address: property.address,
+        coordinates: { lat: property.coordinates[1], lng: property.coordinates[0] },
+        damage_severity: property.severity,
+        damage_percentage: property.damagePercentage,
+        reconstruction_cost: property.reconstructionCost,
+        demolition_cost: property.demolitionCost,
+        demolition_required: property.demolitionCost > 0,
+        claims_priority: property.priority,
+        recommended_action: aiResult?.recommended_action || 'Schedule inspection',
+        damage_details: aiResult?.damage_details || {},
+        ai_insights: aiResult?.ai_insights || ''
+      });
 
       // Update disaster analysis with summary
-      const totalClaims = mockPortfolio.reduce((sum, p) => sum + p.reconstructionCost + p.demolitionCost, 0);
-      const criticalCount = mockPortfolio.filter(p => p.priority === 'critical').length;
+      const totalClaims = property.reconstructionCost + property.demolitionCost;
 
       await supabase
         .from('disaster_analyses')
         .update({
           analysis_status: 'completed',
-          total_properties_analyzed: mockPortfolio.length,
+          total_properties_analyzed: 1,
           total_estimated_claims: totalClaims,
-          critical_properties: criticalCount
+          critical_properties: property.priority === 'critical' ? 1 : 0
         })
         .eq('id', disasterRecord.id);
 
-      setAnalysisResults(mockPortfolio);
+      setAnalysisResults([property]);
       
       // Initialize map with results
       if (mapboxToken && mapContainer.current) {
-        initializeMap(mockPortfolio);
+        initializeMap([property]);
       }
       
-      const fraudCount = mockPortfolio.filter(p => p.fraudFlag).length;
       toast({
         title: "✅ Analysis Complete",
-        description: `${mockPortfolio.length} properties analyzed. ${fraudCount} fraud alerts detected.`
+        description: `Property analyzed. ${property.fraudFlag ? 'Fraud alert detected!' : 'No fraud detected.'}`
       });
     } catch (error: any) {
       console.error('Analysis error:', error);
@@ -402,11 +408,11 @@ const InsuranceClaimsDashboard = () => {
                 </div>
 
                 <div>
-                  <Label>Property Address (Optional)</Label>
+                  <Label>Property Address *</Label>
                   <div className="relative">
                     <Home className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Enter specific property address"
+                      placeholder="Enter property address"
                       value={propertyAddress}
                       onChange={(e) => setPropertyAddress(e.target.value)}
                       className="pl-10"
