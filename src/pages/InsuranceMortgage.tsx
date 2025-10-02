@@ -12,6 +12,7 @@ import { Link } from 'react-router-dom';
 import logoImage from '@/assets/logo.png';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import MapboxTokenGate from '@/components/MapboxTokenGate';
 
 interface DamageAssessment {
   severity: 'minor' | 'moderate' | 'major' | 'severe' | 'total';
@@ -36,6 +37,9 @@ const InsuranceMortgage = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   
+  // Mapbox token state
+  const [mapboxToken, setMapboxToken] = useState<string | null>(null);
+  
   // Form inputs
   const [propertyAddress, setPropertyAddress] = useState('');
   const [disasterType, setDisasterType] = useState('');
@@ -47,11 +51,19 @@ const InsuranceMortgage = () => {
   const [claimEstimate, setClaimEstimate] = useState<ClaimEstimate | null>(null);
   const [propertyCoords, setPropertyCoords] = useState<[number, number] | null>(null);
 
+  // Check for stored Mapbox token
+  useEffect(() => {
+    const stored = localStorage.getItem('mapbox_public_token');
+    if (stored) {
+      setMapboxToken(stored);
+    }
+  }, []);
+
   // Initialize map
   useEffect(() => {
-    if (!mapContainer.current || map.current) return;
+    if (!mapContainer.current || map.current || !mapboxToken) return;
 
-    mapboxgl.accessToken = 'pk.eyJ1IjoiaGFyaXRhLWhpdmUiLCJhIjoiY20zeWJ6YWc5MGZsZTJscjBhdmpqcDVzbSJ9.yG30r2VY3xhVmxcT8h0-HA';
+    mapboxgl.accessToken = mapboxToken;
     
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
@@ -61,7 +73,7 @@ const InsuranceMortgage = () => {
     });
 
     map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
-  }, []);
+  }, [mapboxToken]);
 
   // Update map when property location is analyzed
   useEffect(() => {
@@ -96,9 +108,18 @@ const InsuranceMortgage = () => {
   }, [propertyCoords, damageAssessment, propertyAddress]);
 
   const geocodeAddress = async (address: string): Promise<[number, number] | null> => {
+    if (!mapboxToken) {
+      toast({
+        variant: "destructive",
+        title: "Mapbox Token Required",
+        description: "Please enter a valid Mapbox token to geocode addresses."
+      });
+      return null;
+    }
+    
     try {
       const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=pk.eyJ1IjoiaGFyaXRhLWhpdmUiLCJhIjoiY20zeWJ6YWc5MGZsZTJscjBhdmpqcDVzbSJ9.yG30r2VY3xhVmxcT8h0-HA&country=us`
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${mapboxToken}&country=us`
       );
       const data = await response.json();
       if (data.features && data.features.length > 0) {
@@ -435,7 +456,15 @@ const InsuranceMortgage = () => {
           {/* Right Panel - Map */}
           <div className="lg:col-span-2">
             <Card className="p-6 h-[calc(100vh-12rem)] sticky top-24">
-              <div ref={mapContainer} className="w-full h-full rounded-lg" />
+              {!mapboxToken ? (
+                <MapboxTokenGate 
+                  onTokenSaved={(token) => setMapboxToken(token)}
+                  title="Mapbox Token Required"
+                  description="Enter your Mapbox public access token to view the property map and perform geospatial analysis."
+                />
+              ) : (
+                <div ref={mapContainer} className="w-full h-full rounded-lg" />
+              )}
             </Card>
           </div>
         </div>
